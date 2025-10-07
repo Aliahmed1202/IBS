@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATTIA Mobile Shop - Management System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="login-container" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="attia logo.png" alt="ATTIA Logo" class="login-logo">
+                <h1>ATTIA Mobile Shop</h1>
+                <p>Management System</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" required>
+                        <option value="">Select Role</option>
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary login-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login
+                </button>
+            </form>
+            <div class="demo-credentials">
+                <h4>Database Login Required</h4>
+                <p>Please use valid credentials from the database.</p>
+                <p><small>Ensure database is set up with sample_data.sql</small></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app-container" class="app-container" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>ATTIA Mobile Shop</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <span id="welcome-message">Welcome, User</span>
+                    <span class="user-role" id="user-role">Role</span>
+                </div>
+                <button class="btn btn-secondary" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <ul class="nav-menu" id="nav-menu">
+                <li class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item" data-section="inventory" data-roles="admin,staff">
+                    <i class="fas fa-boxes"></i>
+                    <span>Inventory</span>
+                </li>
+                <li class="nav-item" data-section="sales" data-roles="staff">
+                    <i class="fas fa-receipt"></i>
+                    <span>Create Receipt</span>
+                </li>
+                <li class="nav-item" data-section="sales" data-roles="admin">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Sales Management</span>
+                </li>
+                <li class="nav-item" data-section="customers" data-roles="admin">
+                    <i class="fas fa-users"></i>
+                    <span>Customers</span>
+                </li>
+                <li class="nav-item" data-section="reports" data-roles="admin">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </li>
+                <li class="nav-item" data-section="staff-management" data-roles="admin">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Staff Management</span>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h2>Dashboard</h2>
+                    <div class="date-info">
+                        <i class="fas fa-calendar"></i>
+                        <span id="current-date"></span>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-products">0</h3>
+                            <p>Available Products</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-sales">$0</h3>
+                            <p>Sales Info</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-customers">0</h3>
+                            <p>Customer Info</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inventory Section -->
+            <section id="inventory" class="content-section">
+                <div class="section-header">
+                    <h2>Inventory Management</h2>
+                    <button class="btn btn-primary" id="add-product-btn">
+                        <i class="fas fa-plus"></i> Add Product
+                    </button>
+                </div>
+
+                <div class="search-filter">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-products" placeholder="Search products...">
+                    </div>
+                    <select id="filter-brand">
+                        <option value="">All Brands</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="products-table">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Code</th>
+                                <th>Brand</th>
+                                <th>Model</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-tbody">
+                            <tr class="no-data-row">
+                                <td colspan="8">Loading products...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sales Section -->
+            <section id="sales" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-shopping-cart"></i> Sales Management</h2>
+                    <button class="btn btn-primary" id="add-sale-btn" onclick="ReceiptController.showReceiptBuilder()">
+                        <i class="fas fa-plus"></i>
+                        Create Receipt
+                    </button>
+                </div>
+
+                <!-- Receipt Builder (Staff Feature) -->
+                <div id="receipt-builder" class="receipt-builder" style="display: none;">
+                    <div class="receipt-card">
+                        <h3><i class="fas fa-receipt"></i> Create New Receipt</h3>
+                        
+                        <div class="receipt-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Customer Name</label>
+                                    <input type="text" id="receipt-customer" placeholder="Enter customer name">
+                                </div>
+                                <div class="form-group">
+                                    <label>Phone</label>
+                                    <input type="text" id="receipt-phone" placeholder="Customer phone">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="receipt-items">
+                            <h4>Items</h4>
+                            <div class="receipt-items-list" id="receipt-items-list">
+                                <p class="no-items">No items added yet. Go to Inventory to add products.</p>
+                            </div>
+                            
+                            <div class="receipt-total">
+                                <div class="total-row">
+                                    <span>Subtotal:</span>
+                                    <span id="receipt-subtotal">$0.00</span>
+                                </div>
+                                <div class="total-row">
+                                    <span>Tax (10%):</span>
+                                    <span id="receipt-tax">$0.00</span>
+                                </div>
+                                <div class="total-row final-total">
+                                    <span>Total:</span>
+                                    <span id="receipt-total">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="receipt-actions">
+                            <button class="btn btn-secondary" onclick="ReceiptController.cancelReceipt()">Cancel</button>
+                            <button class="btn btn-success" onclick="ReceiptController.completeReceipt()" id="complete-receipt-btn" disabled>
+                                <i class="fas fa-check"></i> Complete Sale
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sales-summary">
+                    <div class="summary-card">
+                        <h4>Today's Sales</h4>
+                        <p class="amount" id="today-sales">$0</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>This Month</h4>
+                        <p class="amount" id="month-sales">$0</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>All Time</h4>
+                        <p class="amount" id="all-sales">$0</p>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Receipt #</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-tbody">
+                            <tr class="no-data-row">
+                                <td colspan="7">Loading sales...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Customers Section -->
+            <section id="customers" class="content-section">
+                <div class="section-header">
+                    <h2>Customer Management</h2>
+                    <button class="btn btn-primary" id="add-customer-btn">
+                        <i class="fas fa-plus"></i> Add Customer
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Total Purchases</th>
+                                <th>Last Visit</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-tbody">
+                            <tr class="no-data-row">
+                                <td colspan="6">Loading customers...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="reports" class="content-section">
+                <div class="section-header">
+                    <h2>Reports & Analytics</h2>
+                </div>
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <h3>Sales Report</h3>
+                        <p>View detailed sales analytics</p>
+                        <button class="btn btn-primary">Generate Report</button>
+                    </div>
+                    <div class="report-card">
+                        <h3>Inventory Report</h3>
+                        <p>Stock levels and product performance</p>
+                        <button class="btn btn-primary">Generate Report</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Staff Management Section -->
+            <section id="staff-management" class="content-section">
+                <div class="section-header">
+                    <h2>Staff Management</h2>
+                    <button class="btn btn-primary" id="add-staff-btn">
+                        <i class="fas fa-plus"></i> Add Staff
+                    </button>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <h3>Staff Members</h3>
+                        <p>Manage staff accounts and permissions</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MVC Implementation with Database Integration -->
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/receipt.js"></script>
+</body>
+</html>
