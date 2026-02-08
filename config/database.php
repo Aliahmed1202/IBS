@@ -2,7 +2,7 @@
 // Database Configuration
 class Database {
     private $host = "localhost";
-    private $db_name = "attia_mobile_shop";
+    private $db_name = "ibs_store";
     private $username = "root";
     private $password = "";
     public $conn;
@@ -16,7 +16,8 @@ class Database {
             $this->conn->exec("set names utf8");
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch(PDOException $exception) {
-            echo "Connection error: " . $exception->getMessage();
+            // Don't echo errors directly as it breaks JSON responses
+            error_log("Database connection error: " . $exception->getMessage());
         }
 
         return $this->conn;

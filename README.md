@@ -1,8 +1,8 @@
-# ATTIA Mobile Shop Management System
+# IBS Mobile Shop Management System
 
 A comprehensive mobile phone shop management system built with PHP, MySQL, and JavaScript featuring real-time inventory management, sales processing, and receipt generation.
 
-![ATTIA Mobile Shop](attia%20logo.png)
+![IBS Mobile Shop](assets/css/logo.jpeg)
 
 ## Features
 
@@ -58,27 +58,21 @@ cd Inventory
 ### Step 2: Database Setup
 ```sql
 # Create database
-mysql -u root -p -e "CREATE DATABASE attia_mobile_shop;"
+mysql -u root -p -e "CREATE DATABASE ibs_store;"
 
-# Import schema
-mysql -u root -p attia_mobile_shop < database/schema.sql
-
-# Import sample data (with plain-text passwords)
-mysql -u root -p attia_mobile_shop < database/sample_data_plain.sql
+# Import full database (structure + seed data)
+mysql -u root -p ibs_store < database/ibs_store_complete.sql
 ```
 ### Step 3: Configure Database Connection
 Edit `config/database.php` with your database credentials:
 ```php
 private $host = "localhost";
-private $db_name = "attia_mobile_shop";
+private $db_name = "ibs_store";
 private $username = "root";
 private $password = ""; // Your MySQL password
 ```
 ### Step 4: Verify Setup
-Visit: `http://localhost/ATTIA/setup_verification.php`
-
-### Step 5: Launch Application
-Visit: `http://localhost/ATTIA/index.html`
+Visit: `http://localhost/Inventory IBS/`
 
 ## Default User Accounts
 
@@ -107,56 +101,51 @@ Visit: `http://localhost/ATTIA/index.html`
 ## Project Structure
 
 ```
-ATTIA/
+Inventory IBS/
 ├── api/                    # PHP API endpoints
 │   ├── auth.php           # Authentication
 │   ├── products.php       # Product management
 │   ├── customers.php      # Customer management
 │   ├── sales.php          # Sales processing
+│   ├── suppliers.php      # Supplier management
 │   └── dashboard.php      # Dashboard data
 ├── assets/
+│   ├── css/               # CSS stylesheets
+│   │   └── style.css       # Main stylesheet
 │   └── js/                # JavaScript files
 │       ├── app.js         # Main application logic
 │       └── receipt.js     # Receipt management
 ├── config/
 │   └── database.php       # Database configuration
 ├── database/
-│   ├── schema.sql         # Database structure
-│   ├── sample_data.sql    # Sample data (hashed passwords)
-│   └── sample_data_plain.sql # Sample data (plain passwords)
-├── pages/                 # HTML pages
-├── js/                    # Legacy JS files (MVC structure)
-├── styles.css             # Main stylesheet
-├── index.html             # Main application
-├── styles.css             # Application styles
-└── test_db.php           # Database connection test
+│   ├── ibs_store_complete.sql # Complete database (structure + data)
+│   └── update_products_structure.sql # Product updates
+├── admin_dashboard.php    # Admin interface
+├── staff_dashboard.php    # Staff interface
+├── index.php              # Login page
+└── README.md              # Documentation
 ```
 
 ## 🛠️ Setup Instructions
 
 ### 1. Database Setup
-1. Create MySQL database `attia_mobile_shop`
-2. Import database structure:
+1. Create MySQL database `ibs_store`
+2. Import the provided dump (tables + data):
    ```sql
-   mysql -u root -p attia_mobile_shop < database/schema.sql
-   ```
-3. Import sample data:
-   ```sql
-   mysql -u root -p attia_mobile_shop < database/sample_data.sql
+   mysql -u root -p ibs_store < database/ibs_store_complete.sql
    ```
 
 ### 2. Configuration
 1. Update database credentials in `config/database.php`:
    ```php
    private $host = "localhost";
-   private $db_name = "attia_mobile_shop";
+   private $db_name = "ibs_store";
    private $username = "root";
    private $password = "";
    ```
 
 ### 3. Testing
-1. Run database test: `http://localhost/ATTIA/test_db.php`
-2. Access application: `http://localhost/ATTIA/`
+1. Access application: `http://localhost/Inventory IBS/`
 
 ## 🔐 Demo Credentials
 

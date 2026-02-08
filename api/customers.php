@@ -24,7 +24,7 @@ switch($method) {
                 'phone' => $row['phone'],
                 'email' => $row['email'],
                 'address' => $row['address'],
-                'total_purchases' => (float)$row['total_purchases'],
+                'total_purchases' => (float)($row['total_purchases'] / 100),
                 'customer_tier' => $row['customer_tier'],
                 'created_at' => $row['created_at']
             ];
