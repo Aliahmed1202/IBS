@@ -38,7 +38,7 @@ $stock_items = $stock_items_stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Items Management - <?php echo htmlspecialchars($product['brand'] . ' ' . $product['model']); ?></title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="components/css/style.css">
     <style>
         .container {
             max-width: 1200px;

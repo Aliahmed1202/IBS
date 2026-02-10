@@ -269,12 +269,21 @@ switch ($method) {
                     $receipt_number = 'RCP-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
                     // Insert sale record with staff tracking
-                    $sale_query = "INSERT INTO sales (receipt_number, customer_id, staff_id, subtotal, tax_amount, total_amount, payment_method, notes) 
-                              VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                    $sale_query = "INSERT INTO sales (receipt_number, customer_id, staff_id, subtotal, tax_amount, total_amount, payment_method, notes, is_split_payment) 
+                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     $sale_stmt = $db->prepare($sale_query);
                     $notes = "Sale by: " . ($data->staff_name ?? 'Staff') . " (" . ($data->staff_username ?? 'unknown') . ")";
                     $customer_id = $data->customer_id ?? null;
-                    $payment_method = $data->payment_method ?? 'cash';
+                    
+                    // Handle split payments
+                    $is_split_payment = isset($data->is_split_payment) && $data->is_split_payment ? 1 : 0;
+                    $payment_method = 'Split Payment';
+                    
+                    if (!$is_split_payment && isset($data->payment_method)) {
+                        $payment_method = $data->payment_method;
+                    } elseif (isset($data->payment_splits) && count($data->payment_splits) === 1) {
+                        $payment_method = $data->payment_splits[0]->payment_method;
+                    }
 
                     $subtotal_cents = intval(round($data->subtotal * 100));
                     $tax_cents = intval(round($data->tax_amount * 100));
@@ -289,6 +298,7 @@ switch ($method) {
                     $sale_stmt->bindParam(6, $total_cents);
                     $sale_stmt->bindParam(7, $payment_method);
                     $sale_stmt->bindParam(8, $notes);
+                    $sale_stmt->bindParam(9, $is_split_payment);
 
                     // Log the sale creation
                     error_log("Creating sale: Receipt $receipt_number by staff ID " . $data->staff_id . " (" . ($data->staff_name ?? 'Unknown') . ")");
@@ -346,6 +356,21 @@ switch ($method) {
                         $customer_stmt->bindParam(1, $customer_total_cents);
                         $customer_stmt->bindParam(2, $customer_id_val);
                         $customer_stmt->execute();
+                    }
+
+                    // Insert payment splits if applicable
+                    if (isset($data->payment_splits) && is_array($data->payment_splits)) {
+                        foreach ($data->payment_splits as $split) {
+                            $split_query = "INSERT INTO payment_splits (sale_id, payment_method, amount, reference_number) 
+                                          VALUES (?, ?, ?, ?)";
+                            $split_stmt = $db->prepare($split_query);
+                            
+                            $split_amount = floatval($split->amount);
+                            $split_method = $split->payment_method;
+                            $split_reference = $split->reference_number ?? null;
+                            
+                            $split_stmt->execute([$sale_id, $split_method, $split_amount, $split_reference]);
+                        }
                     }
 
                     $db->commit();

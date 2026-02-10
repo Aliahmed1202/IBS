@@ -55,7 +55,8 @@ try {
     
     $query = "SELECT id, username, name, role, is_active, created_at 
               FROM users 
-              ORDER BY role, name";
+              WHERE role != 'admin'
+              ORDER BY name";
     error_log("SQL Query: " . $query);
     
     $stmt = $db->prepare($query);
@@ -194,9 +195,9 @@ if ($_POST) {
 
 <head>
     <title data-translate="navigation.dashboard">Admin Dashboard - IBS</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="components/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="assets/js/translations.js"></script>
+    <script src="components/js/translations.js"></script>
 </head>
 
 <body id="body-lang">
@@ -208,7 +209,7 @@ if ($_POST) {
     
     <div class="header">
         <div style="display: flex; align-items: center; gap: 15px;">
-            <img src="assets/css/logo.jpeg" alt="IBS Store Logo" style="width: 40px; height: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" />
+            <img src="components/css/logo.jpeg" alt="IBS Store Logo" style="width: 40px; height: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" />
             <h1 data-translate="navigation.dashboard">🛠️ IBS Admin Dashboard</h1>
         </div>
         <div>
@@ -224,14 +225,14 @@ if ($_POST) {
     </div>
 
     <div class="nav-tabs">
-        <button class="nav-tab active" onclick="showTab('receipt')" data-translate="sales.receipt">🧾 Receipt</button>
-        <button class="nav-tab" onclick="showTab('products')" data-translate="inventory.addProduct">📦 Add Product</button>
-        <button class="nav-tab" onclick="showTab('inventory')" data-translate="navigation.inventory">📋 Inventory</button>
-        <button class="nav-tab" onclick="showTab('sales')" data-translate="navigation.sales">💰 Sales</button>
-        <button class="nav-tab" onclick="showTab('reports')" data-translate="navigation.reports">📊 Reports</button>
-        <button class="nav-tab" onclick="showTab('staff')" data-translate="navigation.staff">👥 Staff</button>
-        <button class="nav-tab" onclick="showTab('income')" data-translate="navigation.income">💰 Income</button>
-        <button class="nav-tab" onclick="showTab('payment')" data-translate="navigation.payment">💸 Payment</button>
+        <button class="nav-tab active" onclick="console.log('Receipt tab clicked'); showTab('receipt')" data-translate="sales.receipt">🧾 Receipt</button>
+        <button class="nav-tab" onclick="console.log('Products tab clicked'); showTab('products')" data-translate="inventory.addProduct">📦 Add Product</button>
+        <button class="nav-tab" onclick="console.log('Inventory tab clicked'); showTab('inventory')" data-translate="navigation.inventory">📋 Inventory</button>
+        <button class="nav-tab" onclick="console.log('Sales tab clicked'); showTab('sales')" data-translate="navigation.sales">💰 Sales</button>
+        <button class="nav-tab" onclick="console.log('Reports tab clicked'); showTab('reports')" data-translate="navigation.reports">📊 Reports</button>
+        <button class="nav-tab" onclick="console.log('Staff tab clicked'); showTab('staff')" data-translate="navigation.staff">👥 Staff</button>
+        <button class="nav-tab" onclick="console.log('Income tab clicked'); showTab('income')" data-translate="navigation.income">💰 Income</button>
+        <button class="nav-tab" onclick="console.log('Payment tab clicked'); showTab('payment')" data-translate="navigation.payment">💸 Payment</button>
     </div>
 
     <div class="content">
@@ -247,552 +248,21 @@ if ($_POST) {
             <div class="error"><?php echo $error; ?></div>
         <?php endif; ?>
 
-        <!-- Receipt Tab -->
-        <div id="receipt" class="tab-content active">
-            <div class="section">
-                <h2 data-translate="sales.createReceipt">🧾 Create Receipt</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div>
-                        <h3 data-translate="sales.customerInfo">Customer Information</h3>
-                        <div class="form-group">
-                            <label data-translate="sales.customerName">Customer Name:</label>
-                            <input type="text" id="customer-name" placeholder="Enter customer name" data-translate-placeholder="sales.customerNamePlaceholder">
-                        </div>
-                        <div class="form-group">
-                            <label data-translate="sales.customerPhone">Customer Phone:</label>
-                            <input type="tel" id="customer-phone" placeholder="Enter phone number" data-translate-placeholder="sales.customerPhonePlaceholder">
-                        </div>
-                        <div class="form-group">
-                            <label data-translate="sales.selectProduct">Select Product:</label>
-                            <select id="product-select" onchange="updateSellingPrice()">
-                                <option value="" data-translate="sales.chooseProduct">Choose a product...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label data-translate="sales.sellingPrice">Selling Price:</label>
-                            <input type="number" id="selling-price" step="0.01" min="0" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label data-translate="sales.quantity">Quantity:</label>
-                            <input type="number" id="quantity" min="1" value="1" data-translate-placeholder="sales.quantityPlaceholder">
-                        </div>
-                        <button class="btn" onclick="addToReceipt()" id="add-product-btn" disabled data-translate="sales.addToReceipt">Add to Receipt</button>
-                    </div>
-                    <div>
-                        <h3 data-translate="sales.receiptItems">Receipt Items</h3>
-                        <div id="receipt-items" style="border: 1px solid #ddd; padding: 15px; min-height: 200px;">
-                            <div style="text-align: center; color: #666;" data-translate="sales.noItemsAdded">No items added yet</div>
-                        </div>
-                        <div style="background: #f8f9fa; padding: 15px; margin-top: 15px;">
-                            <div style="font-weight: bold; font-size: 1.2em;" data-translate="sales.total">Total: <span id="total"> 0.00 EGP</span>
-                            </div>
-                        </div>
-                        <button class="btn btn-success" onclick="completeReceipt()" id="complete-btn" disabled data-translate="sales.completeSale">Complete
-                            Sale</button>
-                        <button class="btn btn-danger" onclick="clearReceipt()" data-translate="sales.clearReceipt">Clear</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <?php include 'views/admin/receipt_tab.php'; ?>
 
-        <!-- Add Product Tab -->
-        <div id="products" class="tab-content">
-            <div class="section">
-                <h2 data-translate="inventory.addProduct">📦 Add New Product</h2>
-                <form method="POST">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div>
-                            <div class="form-group">
-                                <label data-translate="inventory.productCode">Product Code:</label>
-                                <div
-                                    style="padding: 10px; background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 5px; color: #666; font-weight: bold;">
-                                    Will be auto-generated
-                                </div>
-                                <small style="color: #666; font-size: 12px;" data-translate="inventory.autoGenerated">Product code will be automatically created
-                                    when you save</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.brand"><span style="color: red;">*</span> Brand:</label>
-                                <input type="text" name="brand" required
-                                    style="width: 50%; max-width: 50%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.model"><span style="color: red;">*</span> Model:</label>
-                                <input type="text" name="model" required
-                                    style="width: 50%; max-width: 50%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.purchasePrice"><span style="color: red;">*</span> Purchase Price (Cost):</label>
-                                <input type="number" name="purchase_price" step="0.01" min="0.01" required
-                                    placeholder="What you pay to buy this product"
-                                    style="width: 70%; max-width: 70%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                <small style="color: #666; font-size: 12px;" data-translate="inventory.purchasePriceHelp">The cost price you pay to suppliers</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.minPrice"><span style="color: red;">*</span> Minimum Selling Price:</label>
-                                <input type="number" name="min_selling_price" step="0.01" min="0.01" required
-                                    placeholder="Lowest price allowed for sale"
-                                    style="width: 70%; max-width: 70%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                <small style="color: #666; font-size: 12px;" data-translate="inventory.minPriceHelp">Staff cannot sell below this price</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.suggestedPrice"><span style="color: red;">*</span> Suggested Selling Price:</label>
-                                <input type="number" name="suggested_price" step="0.01" min="0.01" required
-                                    placeholder="Recommended selling price"
-                                    style="width: 70%; max-width: 70%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                <small style="color: #666; font-size: 12px;" data-translate="inventory.suggestedPriceHelp">Default price shown in receipts (can be
-                                    changed)</small>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="form-group">
-                                <label data-translate="inventory.stockQuantity"><span style="color: red;">*</span> Stock Quantity:</label>
-                                <input type="number" name="stock" min="1" required
-                                    placeholder="Enter stock quantity (must be greater than 0)"
-                                    style="width: 50%; max-width: 50%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                <small style="color: #666; font-size: 12px;"></small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.serialNumber">Serial Number:</label>
-                                <input type="text" name="serial_number" 
-                                    placeholder="Enter serial number (optional)"
-                                    style="width: 70%; max-width: 70%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                <small style="color: #666; font-size: 12px;" data-translate="inventory.serialHelp">Unique serial number for tracking</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.color">Color:</label>
-                                <input type="text" name="color" 
-                                    placeholder="Enter product color"
-                                    style="width: 50%; max-width: 50%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                <small style="color: #666; font-size: 12px;" data-translate="inventory.colorHelp">Product color (e.g., Black, White, Blue)</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.supplier">Supplier:</label>
-                                <select name="supplier_id" id="supplier-select"
-                                    style="width: 70%; max-width: 70%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                    <option value="" data-translate="inventory.selectSupplier">Select Supplier</option>
-                                </select>
-                                <small style="color: #666; font-size: 12px;" data-translate="inventory.supplierHelp">Choose supplier for this product</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.hasImei">Has IMEI:</label>
-                                <select name="has_imei" id="has-imei-select"
-                                    style="width: 30%; max-width: 30%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                    <option value="0" data-translate="common.no">No</option>
-                                    <option value="1" data-translate="common.yes">Yes</option>
-                                </select>
-                                <small style="color: #666; font-size: 12px;" data-translate="inventory.imeiHelp">Does this product have IMEI?</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.minStock">Minimum Stock:</label>
-                                <input type="number" name="min_stock" placeholder="Leave empty for no minimum stock"
-                                    style="width: 50%; max-width: 50%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                <small style="color: #666; font-size: 12px;" data-translate="inventory.minStockHelp">Optional: Set minimum stock level for alerts</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.category">Category:</label>
-                                <select name="category_id" id="category-select"
-                                    style="width: 50%; max-width: 50%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                    <option value="" data-translate="inventory.selectCategory">Select Category</option>
-                                    <option value="1" data-translate="inventory.phones">Phones</option>
-                                    <option value="2" data-translate="inventory.airpods">AirPods</option>
-                                    <option value="3" data-translate="inventory.watch">Watch</option>
-                                    <option value="4" data-translate="inventory.accessories">Accessories</option>
-                                    <option value="5" data-translate="inventory.tablets">Tablets</option>
-                                </select>
-                                <small style="color: #666; font-size: 12px;" data-translate="inventory.categoryHelp">Choose product category</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="inventory.description">Description:</label>
-                                <textarea name="description" rows="3"
-                                    style="width: 50%; max-width: 50%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; resize: vertical;"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" name="add_product" class="btn" data-translate="inventory.addProduct">Add Product</button>
-                </form>
-            </div>
-        </div>
+        <?php include 'views/admin/products_tab.php'; ?>
 
-        <!-- Inventory Tab -->
-        <div id="inventory" class="tab-content">
-            <div class="section">
-                <h2 data-translate="inventory.title">📋 Inventory Management</h2>
-                <div id="inventory-stats" class="stats-grid"></div>
+        <?php include 'views/admin/inventory_tab.php'; ?>
 
-                <!-- Search Bar -->
-                <div class="form-group" style="margin: 20px 0;">
-                    <label data-translate="inventory.search">🔍 Search Products:</label>
-                    <input type="text" id="inventory-search"
-                        placeholder="Search by code, brand, model, or description..."
-                        style="width: 100%; max-width: 500px; font-size: 16px; padding: 12px;">
-                    <div id="search-results-count" style="margin-top: 5px; color: #666; font-size: 14px;"></div>
-                </div>
+        <?php include 'views/admin/sales_tab.php'; ?>
 
-                <table id="inventory-table">
-                    <thead>
-                        <tr>
-                            <th data-translate="inventory.code">Code</th>
-                            <th data-translate="inventory.barcode">Barcode</th>
-                            <th data-translate="inventory.product">Product</th>
-                            <th data-translate="inventory.category">Category</th>
-                            <th data-translate="inventory.color">Color</th>
-                            <th data-translate="inventory.serial">Serial/IMEI</th>
-                            <th data-translate="inventory.supplier">Supplier</th>
-                            <th data-translate="inventory.purchasePrice">Purchase Price</th>
-                            <th data-translate="inventory.minPrice">Min Price</th>
-                            <th data-translate="inventory.suggestedPrice">Suggested Price</th>
-                            <th data-translate="inventory.stock">Stock</th>
-                            <th data-translate="inventory.status">Status</th>
-                            <th data-translate="inventory.stockDetails">Stock Details</th>
-                            <th data-translate="inventory.actions">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventory-tbody"></tbody>
-                </table>
-            </div>
-        </div>
+        <?php include 'views/admin/reports_tab.php'; ?>
 
-        <!-- Sales Tab -->
-        <div id="sales" class="tab-content">
-            <div class="section">
-                <h2>💰 Sales Management</h2>
-                <div id="sales-stats" class="stats-grid"></div>
+        <?php include 'views/admin/staff_tab.php'; ?>
 
-                <!-- Search Bar -->
-                <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
-                    <button onclick="startBarcodeScanner()" class="btn btn-primary" style="padding: 12px 20px; background: #28a745;">
-                        📷 Scan Barcode
-                    </button>
-                    <div style="flex: 1; max-width: 400px;">
-                        <input type="text" id="salesSearchInput" placeholder="🔍 Search by Receipt Number " data-translate-placeholder="sales.searchReceipt"
-                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;"
-                            onkeyup="filterSales(this.value)"
-                            onkeypress="if(event.key==='Enter') filterSales(this.value)">
-                    </div>
-                    <button onclick="clearSalesSearch()" class="btn btn-secondary"
-                        style="padding: 12px 20px;">Clear</button>
-                </div>
+        <?php include 'views/admin/income_tab.php'; ?>
 
-                <!-- Search Results Count -->
-                <div id="sales-search-results-count" style="margin-bottom: 15px; color: #666; font-size: 14px;">
-                    Showing all sales
-                </div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th data-translate="sales.receiptNumber">Receipt #</th>
-                            <th data-translate="sales.date">Date</th>
-                            <th data-translate="sales.staff">Staff</th>
-                            <th data-translate="sales.customer">Customer</th>
-                            <th data-translate="sales.totalAmount">Total Amount</th>
-                            <th data-translate="sales.actions">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sales-tbody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Reports Tab -->
-        <div id="reports" class="tab-content">
-            <div class="section">
-                <h2 data-translate="reports.title">📊 Reports</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3 id="today-sales">EGP 0</h3>
-                        <p data-translate="reports.todaySales">Today's Sales</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 id="today-profit">EGP 0</h3>
-                        <p data-translate="reports.todayProfit">Today's Profit</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 id="month-sales">EGP 0</h3>
-                        <p data-translate="reports.monthSales">This Month Sales</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 id="month-profit">EGP 0</h3>
-                        <p data-translate="reports.monthProfit">This Month Profit</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 id="total-products">0</h3>
-                        <p data-translate="reports.totalProducts">Total Products</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 id="low-stock">0</h3>
-                        <p data-translate="reports.lowStock">Low Stock Items</p>
-                    </div>
-                </div>
-
-                <!-- Print Reports Section -->
-                <div style="margin-top: 30px;">
-                    <h3
-                        style="color: #0056b3; margin-bottom: 20px; font-size: 1.3em; border-left: 4px solid #0056b3; padding-left: 15px;"
-                        data-translate="reports.printReports">🖨️ Print Reports</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-
-                        <!-- Today's Sales Report -->
-                        <div style="background: linear-gradient(135deg, #0056b3 0%, #007bff 100%); color: white; padding: 25px; border-radius: 15px; box-shadow: 0 8px 25px rgba(0, 86, 179, 0.3); transition: transform 0.3s ease;"
-                            onmouseover="this.style.transform='translateY(-5px)'"
-                            onmouseout="this.style.transform='translateY(0)'">
-                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                                <div
-                                    style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 50%; margin-right: 15px;">
-                                    <span style="font-size: 24px;">📅</span>
-                                </div>
-                                <div>
-                                    <h4 style="margin: 0; font-size: 1.2em;">Today's Sales</h4>
-                                    <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Detailed sales report
-                                        for today</p>
-                                </div>
-                            </div>
-                            <button onclick="printTodaysSalesReport()"
-                                style="width: 100%; background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s ease;"
-                                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
-                                onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                                🖨️ Print Today's Sales
-                            </button>
-                        </div>
-
-                        <!-- This Month's Sales Report -->
-                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 25px; border-radius: 15px; box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3); transition: transform 0.3s ease;"
-                            onmouseover="this.style.transform='translateY(-5px)'"
-                            onmouseout="this.style.transform='translateY(0)'">
-                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                                <div
-                                    style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 50%; margin-right: 15px;">
-                                    <span style="font-size: 24px;">📊</span>
-                                </div>
-                                <div>
-                                    <h4 style="margin: 0; font-size: 1.2em;">This Month's Sales</h4>
-                                    <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Complete monthly sales
-                                        report</p>
-                                </div>
-                            </div>
-                            <button onclick="printMonthSalesReport()"
-                                style="width: 100%; background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s ease;"
-                                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
-                                onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                                🖨️ Print Monthly Report
-                            </button>
-                        </div>
-
-                        <!-- Total Products Report -->
-                        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 25px; border-radius: 15px; box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3); transition: transform 0.3s ease;"
-                            onmouseover="this.style.transform='translateY(-5px)'"
-                            onmouseout="this.style.transform='translateY(0)'">
-                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                                <div
-                                    style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 50%; margin-right: 15px;">
-                                    <span style="font-size: 24px;">📦</span>
-                                </div>
-                                <div>
-                                    <h4 style="margin: 0; font-size: 1.2em;">Total Products</h4>
-                                    <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Complete inventory list
-                                    </p>
-                                </div>
-                            </div>
-                            <button onclick="printProductsReport()"
-                                style="width: 100%; background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s ease;"
-                                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
-                                onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                                🖨️ Print Products List
-                            </button>
-                        </div>
-
-                        <!-- Low Stock Items Report -->
-                        <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 25px; border-radius: 15px; box-shadow: 0 8px 25px rgba(250, 112, 154, 0.3); transition: transform 0.3s ease;"
-                            onmouseover="this.style.transform='translateY(-5px)'"
-                            onmouseout="this.style.transform='translateY(0)'">
-                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                                <div
-                                    style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 50%; margin-right: 15px;">
-                                    <span style="font-size: 24px;">⚠️</span>
-                                </div>
-                                <div>
-                                    <h4 style="margin: 0; font-size: 1.2em;">Low Stock Items</h4>
-                                    <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Items requiring
-                                        restocking</p>
-                                </div>
-                            </div>
-                            <button onclick="printLowStockReport()"
-                                style="width: 100%; background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s ease;"
-                                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
-                                onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                                🖨️ Print Low Stock Alert
-                            </button>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Staff Management Tab -->
-        <div id="staff" class="tab-content">
-            <div class="section">
-                <h2 data-translate="staff.title">👥 Staff Management</h2>
-                <h3 data-translate="staff.addStaff">Add New Staff</h3>
-                <form method="POST">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div>
-                            <div class="form-group">
-                                <label data-translate="staff.username">Username:</label>
-                                <input type="text" name="username" required>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="staff.password">Password:</label>
-                                <input type="text" name="password" required>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="staff.role">Role:</label>
-                                <select name="role" required>
-                                    <option value="staff">Staff</option>
-                                    <option value="admin">Admin</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="form-group">
-                                <label data-translate="staff.name">Full Name:</label>
-                                <input type="text" name="name" required>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="staff.phone">Phone:</label>
-                                <input type="text" name="phone">
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="staff.email">Email:</label>
-                                <input type="email" name="email">
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" name="add_user" class="btn" data-translate="staff.addStaff">Add Staff</button>
-                </form>
-
-                <h3 style="margin-top: 30px;" data-translate="staff.currentStaff">Current Staff</h3>
-
-                <!-- Staff Search Bar -->
-                <div class="form-group" style="margin: 20px 0;">
-                    <label data-translate="staff.searchStaff">🔍 Search Staff:</label>
-                    <input type="text" id="staff-search" placeholder="Search by username, name, role, or phone..."
-                        style="width: 100%; max-width: 500px; font-size: 16px; padding: 12px;">
-                    <div id="staff-search-results-count" style="margin-top: 5px; color: #666; font-size: 14px;"></div>
-                </div>
-
-                <table id="staff-table">
-                    <thead>
-                        <tr>
-                            <th data-translate="staff.username">Username</th>
-                            <th data-translate="staff.name">Name</th>
-                            <th data-translate="staff.role">Role</th>
-                            <th data-translate="staff.phone">Phone</th>
-                            <th data-translate="staff.status">Status</th>
-                            <th data-translate="staff.actions">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="staff-tbody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Income Tab -->
-        <div id="income" class="tab-content">
-            <div class="section">
-                <h2 data-translate="income.title">💰 Income Management</h2>
-
-                <!-- Add Income Entry Form -->
-                <div style="margin-bottom: 30px;">
-                    <h3 data-translate="income.addNewIncome">Add New Income Entry</h3>
-                    <form id="addIncomeForm">
-                        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
-                            <div class="form-group">
-                                <label data-translate="income.price">Price: <span style="color: red;">*</span></label>
-                                <input type="number" id="income-price" step="0.01" min="0.01" required
-                                    placeholder="Enter income amount"
-                                    style="width: 100%; max-width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                <small style="color: #666; font-size: 12px;" data-translate="income.amountGreaterThanZero">Amount must be greater than 0</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="income.description">Description: <span style="color: red;">*</span></label>
-                                <textarea id="income-description" rows="2" required
-                                    placeholder="Describe the source of income..."
-                                    style="width: 100%; max-width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; resize: vertical;"></textarea>
-                                <small style="color: #666; font-size: 12px;" data-translate="income.provideIncomeDetails">Provide details about this income entry</small>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn" style="margin-top: 10px;" data-translate="income.addIncomeEntry">Add Income Entry</button>
-                    </form>
-                </div>
-
-                <!-- Income Entries List -->
-                <div>
-                    <h3 data-translate="income.incomeEntries">Income Entries</h3>
-                    <div id="income-stats" class="stats-grid" style="margin-bottom: 20px;"></div>
-                    <table id="income-table">
-                        <thead>
-                            <tr>
-                                <th data-translate="income.date">Date</th>
-                                <th data-translate="income.description">Description</th>
-                                <th data-translate="income.amount">Amount</th>
-                                <th data-translate="income.actions">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="income-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Payment Tab -->
-        <div id="payment" class="tab-content">
-            <div class="section">
-                <h2 data-translate="payment.title">💸 Payment Management</h2>
-
-                <!-- Add Payment Entry Form -->
-                <div style="margin-bottom: 30px;">
-                    <h3 data-translate="payment.addNewPayment">Add New Payment Entry</h3>
-                    <form id="addPaymentForm">
-                        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
-                            <div class="form-group">
-                                <label data-translate="payment.amount">Amount: <span style="color: red;">*</span></label>
-                                <input type="number" id="payment-price" step="0.01" min="0.01" required
-                                    placeholder="Enter payment amount"
-                                    style="width: 100%; max-width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                                <small style="color: #666; font-size: 12px;" data-translate="payment.amountGreaterThanZero">Amount must be greater than 0</small>
-                            </div>
-                            <div class="form-group">
-                                <label data-translate="payment.description">Description: <span style="color: red;">*</span></label>
-                                <textarea id="payment-description" rows="2" required
-                                    placeholder="Describe the payment/expense..."
-                                    style="width: 100%; max-width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; resize: vertical;"></textarea>
-                                <small style="color: #666; font-size: 12px;" data-translate="payment.providePaymentDetails">Provide details about this payment entry</small>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn" style="margin-top: 10px;" data-translate="payment.addPaymentEntry">Add Payment Entry</button>
-                    </form>
-                </div>
-
-                <!-- Payment Entries List -->
-                <div>
-                    <h3 data-translate="payment.paymentEntries">Payment Entries</h3>
-                    <div id="payment-stats" class="stats-grid" style="margin-bottom: 20px;"></div>
-                    <table id="payment-table">
-                        <thead>
-                            <tr>
-                                <th data-translate="payment.date">Date</th>
-                                <th data-translate="payment.description">Description</th>
-                                <th data-translate="payment.amount">Amount</th>
-                                <th data-translate="payment.actions">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="payment-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <?php include 'views/admin/payment_tab.php'; ?>
     </div>
 
     <!-- Edit User Modal -->
@@ -951,6 +421,26 @@ if ($_POST) {
                         style="color: #28a745; margin-bottom: 15px; font-size: 1.2em; border-left: 4px solid #28a745; padding-left: 10px;">
                         💰 Pricing & Stock</h3>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Search Product (Type or Scan Barcode):</label>
+                            <div style="position: relative;">
+                                <input type="text" id="product-search-edit"
+                                    placeholder="🔍 Type product code, brand, model, or scan barcode..."
+                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; padding-right: 40px;"
+                                    onkeyup="searchProducts(this.value)"
+                                    onkeypress="if(event.key==='Enter') selectFirstProduct()"
+                                    oninput="handleProductInput(this.value)">
+                                <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #666;">
+                                    <span id="scan-indicator-edit">📷</span>
+                                </div>
+                            </div>
+                            <div id="product-search-results"
+                                style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-top: none; display: none; background: white; position: relative; z-index: 100;">
+                            </div>
+                            <div id="scan-feedback" style="margin-top: 5px; font-size: 12px; color: #666; display: none;">
+                                Scanning barcode...
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label>Brand:</label>
                             <input type="text" id="editProductBrand" required
@@ -1170,21 +660,80 @@ if ($_POST) {
     </style>
 
     <script>
-        let currentReceipt = { items: [], subtotal: 0, tax: 0, total: 0 };
+        // Simple test to verify JavaScript is working
+        console.log('Admin dashboard loaded successfully!');
+        console.log('handleProductInput function:', typeof handleProductInput);
+        console.log('searchProducts function:', typeof searchProducts);
+        console.log('selectProduct function:', typeof selectProduct);
+        console.log('addToReceipt function:', typeof addToReceipt);
+        
+        let currentReceipt = {
+            items: [],
+            total: 0
+        };
         let products = [];
         let allInventoryProducts = []; // Store all products for search filtering
         let allStaffMembers = <?php echo json_encode($staffMembers); ?>; // Store all staff for search filtering
         let allSuppliers = []; // Store all suppliers for dropdown
+
+        // Global showTab function - must be outside DOMContentLoaded
+        function showTab(tabName) {
+            console.log('Switching to tab:', tabName);
+            
+            // Hide all tab contents
+            const allTabContents = document.querySelectorAll('.tab-content');
+            allTabContents.forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = 'none';
+            });
+            
+            // Remove active class from all nav tabs
+            const allNavTabs = document.querySelectorAll('.nav-tab');
+            allNavTabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show the selected tab content
+            const targetTabContent = document.getElementById(tabName);
+            if (targetTabContent) {
+                targetTabContent.classList.add('active');
+                targetTabContent.style.display = 'block';
+                console.log('Tab content found and activated:', tabName);
+            } else {
+                console.error('Tab content not found:', tabName);
+            }
+            
+            // Activate the corresponding nav tab
+            const targetNavTab = Array.from(allNavTabs).find(tab => {
+                const onclick = tab.getAttribute('onclick');
+                return onclick && onclick.includes("'" + tabName + "'");
+            });
+            
+            if (targetNavTab) {
+                targetNavTab.classList.add('active');
+                console.log('Nav tab activated:', targetNavTab.textContent);
+            } else {
+                console.error('Nav tab not found for:', tabName);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
-            // Check if we should show inventory tab (coming from stock_items page)
-            const activeTab = localStorage.getItem('activeTab');
-            if (activeTab === 'inventory') {
-                // Clear the stored value
-                localStorage.removeItem('activeTab');
-                // Show inventory tab after a short delay to ensure page is loaded
-                setTimeout(() => {
-                    showTab('inventory');
-                }, 100);
+            // Add event listeners for product search functionality
+            const firstRow = document.querySelector('.payment-method-row');
+            if (firstRow) {
+                firstRow.querySelector('.payment-method-select').addEventListener('change', updatePaymentTotals);
+                firstRow.querySelector('.payment-amount').addEventListener('input', updatePaymentTotals);
+            }
+            
+            // Add event listeners for barcode scanning
+            const productSearchInput = document.getElementById('product-search');
+            const productSearchEditInput = document.getElementById('product-search-edit');
+            
+            if (productSearchInput) {
+                productSearchInput.addEventListener('input', handleProductInput);
+            }
+            if (productSearchEditInput) {
+                productSearchEditInput.addEventListener('input', handleProductInput);
             }
             
             loadSuppliers();
@@ -1196,6 +745,13 @@ if ($_POST) {
             loadIncome();
             loadPayment();
 
+            // Add payment row event listeners
+            const paymentRows = document.querySelectorAll('.payment-method-row');
+            paymentRows.forEach(row => {
+                row.querySelector('.payment-method-select').addEventListener('change', updatePaymentTotals);
+                row.querySelector('.payment-amount').addEventListener('input', updatePaymentTotals);
+            });
+
             // Check if product was just added and refresh inventory
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('success')) {
@@ -1206,12 +762,7 @@ if ($_POST) {
                 }
                 // Refresh inventory after a short delay to ensure database is updated
                 setTimeout(function () {
-                    loadInventory();
-                    // Switch to inventory tab if not already there
-                    const inventoryTab = document.querySelector('.nav-tab[onclick*="inventory"]');
-                    if (inventoryTab) {
-                        inventoryTab.click();
-                    }
+                    loadProducts();
                 }, 500);
             }
 
@@ -1517,20 +1068,13 @@ if ($_POST) {
             }
         });
 
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-        }
-
         async function loadProducts() {
             try {
                 const response = await fetch('api/products.php');
                 const result = await response.json();
                 if (result.success) {
                     products = result.data;
-                    allProducts = result.data.filter(p => p.stock > 0); // Only products with stock for search
+                    allProducts = result.data; // Include all products for search functionality
                     populateProductSelect();
                 }
             } catch (error) {
@@ -1573,11 +1117,226 @@ if ($_POST) {
         // Global variables for product search
         let selectedProduct = null;
         let allProducts = [];
+        let paymentRowCount = 1;
+
+        function addPaymentRow() {
+            const container = document.getElementById('splitPaymentContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'payment-method-row';
+            newRow.setAttribute('data-payment-row', paymentRowCount);
+            
+            newRow.innerHTML = `
+                <select class="payment-method-select" style="width: 120px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;">
+                    <option value="">Select Method</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Visa">Visa</option>
+                    <option value="Instapay">Instapay</option>
+                    <option value="Installment">Installment</option>
+                </select>
+                <input type="number" class="payment-amount" placeholder="Amount" style="width: 100px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;" step="0.01" min="0">
+                <input type="text" class="payment-reference" placeholder="Reference (optional)" style="width: 150px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;">
+                <button class="btn btn-sm btn-danger" onclick="removePaymentRow(${paymentRowCount})">×</button>
+            `;
+            
+            container.appendChild(newRow);
+            
+            // Add event listeners to new inputs
+            newRow.querySelector('.payment-method-select').addEventListener('change', updatePaymentTotals);
+            newRow.querySelector('.payment-amount').addEventListener('input', updatePaymentTotals);
+            
+            paymentRowCount++;
+            updatePaymentTotals();
+        }
+
+        function removePaymentRow(rowId) {
+            const row = document.querySelector(`[data-payment-row="${rowId}"]`);
+            if (row) {
+                row.remove();
+                updatePaymentTotals();
+            }
+        }
+
+        function updatePaymentTotals() {
+            const totalAmount = parseFloat(currentReceipt.total) || 0;
+            let totalPaid = 0;
+            
+            document.querySelectorAll('.payment-method-row').forEach(row => {
+                const amount = parseFloat(row.querySelector('.payment-amount').value) || 0;
+                const method = row.querySelector('.payment-method-select').value;
+                
+                if (method && amount > 0) {
+                    totalPaid += amount;
+                }
+            });
+            
+            const remaining = totalAmount - totalPaid;
+            
+            document.getElementById('totalPaid').textContent = totalPaid.toFixed(2);
+            document.getElementById('remainingAmount').textContent = remaining.toFixed(2);
+            
+            // Update remaining amount color
+            const remainingElement = document.getElementById('remainingAmount');
+            if (Math.abs(remaining) < 0.01) {
+                remainingElement.style.color = 'green';
+            } else if (remaining > 0) {
+                remainingElement.style.color = 'red';
+            } else {
+                remainingElement.style.color = 'orange';
+            }
+            
+            // Enable complete button only if payment is fully covered
+            const completeBtn = document.getElementById('complete-btn');
+            completeBtn.disabled = currentReceipt.items.length === 0 || Math.abs(remaining) > 0.01;
+        }
+
+        function getPaymentSplits() {
+            const splits = [];
+            
+            document.querySelectorAll('.payment-method-row').forEach(row => {
+                const method = row.querySelector('.payment-method-select').value;
+                const amount = parseFloat(row.querySelector('.payment-amount').value) || 0;
+                const reference = row.querySelector('.payment-reference').value || null;
+                
+                if (method && amount > 0) {
+                    splits.push({
+                        payment_method: method,
+                        amount: amount,
+                        reference_number: reference
+                    });
+                }
+            });
+            
+            return splits;
+        }
+
+        // Product search functions with barcode scanning support
+        let scanTimeout = null;
+        let isScanning = false;
+
+        function handleProductInput(value) {
+            // Detect potential barcode scanning (rapid input of numbers)
+            if (!allProducts || allProducts.length === 0) {
+                return; // Exit if products not loaded yet
+            }
+            
+            if (/^\d+$/.test(value) && value.length >= 8) {
+                if (!isScanning) {
+                    isScanning = true;
+                    document.getElementById('scan-feedback').style.display = 'block';
+                    document.getElementById('scan-indicator').textContent = '🔄';
+                }
+                
+                // Clear existing timeout
+                if (scanTimeout) {
+                    clearTimeout(scanTimeout);
+                }
+                
+                // Set timeout to process barcode after scanning stops
+                scanTimeout = setTimeout(() => {
+                    processBarcode(value);
+                    isScanning = false;
+                    document.getElementById('scan-feedback').style.display = 'none';
+                    document.getElementById('scan-indicator').textContent = '📷';
+                }, 500);
+            } else {
+                // Regular typing search
+                if (scanTimeout) {
+                    clearTimeout(scanTimeout);
+                }
+                isScanning = false;
+                document.getElementById('scan-feedback').style.display = 'none';
+                document.getElementById('scan-indicator').textContent = '📷';
+            }
+        }
+
+        function processBarcode(barcode) {
+            // First try exact barcode match
+            let product = allProducts.find(p => p.barcode === barcode || p.imei === barcode);
+            
+            // If no exact match, try product code match
+            if (!product) {
+                product = allProducts.find(p => p.code === barcode);
+            }
+            
+            // If still no match, try partial match
+            if (!product) {
+                product = allProducts.find(p => 
+                    p.code.includes(barcode) || 
+                    (p.barcode && p.barcode.includes(barcode)) ||
+                    (p.imei && p.imei.includes(barcode))
+                );
+            }
+            
+            if (product) {
+                selectProduct(product);
+                // Clear both search inputs after successful scan
+                const productSearchInput = document.getElementById('product-search');
+                const productSearchEditInput = document.getElementById('product-search-edit');
+                if (productSearchInput) {
+                    productSearchInput.value = '';
+                }
+                if (productSearchEditInput) {
+                    productSearchEditInput.value = '';
+                }
+                // Show success feedback
+                showScanFeedback('✅ Product found: ' + product.brand + ' ' + product.model, 'success');
+            } else {
+                // Show error feedback
+                showScanFeedback('❌ No product found for barcode: ' + barcode, 'error');
+                // Clear both search inputs for next scan
+                setTimeout(() => {
+                    const productSearchInput = document.getElementById('product-search');
+                    const productSearchEditInput = document.getElementById('product-search-edit');
+                    if (productSearchInput) {
+                        productSearchInput.value = '';
+                    }
+                    if (productSearchEditInput) {
+                        productSearchEditInput.value = '';
+                    }
+                }, 2000);
+            }
+        }
+
+        function showScanFeedback(message, type) {
+            // Show feedback in both Create Receipt and Add Product tabs
+            const feedback = document.getElementById('scan-feedback');
+            const feedbackEdit = document.getElementById('scan-feedback-edit');
+            
+            if (feedback) {
+                feedback.textContent = message;
+                feedback.style.display = 'block';
+                feedback.style.color = type === 'success' ? '#28a745' : '#dc3545';
+            }
+            if (feedbackEdit) {
+                feedbackEdit.textContent = message;
+                feedbackEdit.style.display = 'block';
+                feedbackEdit.style.color = type === 'success' ? '#28a745' : '#dc3545';
+            }
+            
+            setTimeout(() => {
+                if (feedback) {
+                    feedback.style.display = 'none';
+                }
+                if (feedbackEdit) {
+                    feedbackEdit.style.display = 'none';
+                }
+            }, 3000);
+        }
 
         function searchProducts(searchTerm) {
+            console.log('Search called with:', searchTerm);
+            console.log('All products count:', allProducts.length);
+            
+            // Get the appropriate results div based on which input is being used
             const resultsDiv = document.getElementById('product-search-results');
+            const productSearchInput = document.getElementById('product-search');
+            const productSearchEditInput = document.getElementById('product-search-edit');
+            
+            // Check if either search input has a value to determine which one triggered this
+            const isMainSearch = productSearchInput && productSearchInput.value === searchTerm;
+            const isEditSearch = productSearchEditInput && productSearchEditInput.value === searchTerm;
 
-            if (!searchTerm.trim()) {
+            if (!searchTerm.trim() || (!isMainSearch && !isEditSearch)) {
                 resultsDiv.style.display = 'none';
                 return;
             }
@@ -1587,45 +1346,70 @@ if ($_POST) {
                 return product.code.toLowerCase().includes(searchLower) ||
                     product.brand.toLowerCase().includes(searchLower) ||
                     product.model.toLowerCase().includes(searchLower) ||
-                    `${product.brand} ${product.model}`.toLowerCase().includes(searchLower);
+                    `${product.brand} ${product.model}`.toLowerCase().includes(searchLower) ||
+                    (product.barcode && product.barcode.includes(searchLower)) ||
+                    (product.imei && product.imei.includes(searchLower));
             });
 
             if (filteredProducts.length === 0) {
-                resultsDiv.innerHTML = '<div style="padding: 10px; color: #666; text-align: center;">No products found</div>';
-                resultsDiv.style.display = 'block';
-                return;
+                resultsDiv.innerHTML = '<div style="padding: 10px; color: #666;">No products found</div>';
+            } else {
+                resultsDiv.innerHTML = filteredProducts.map(product => `
+                    <div onclick="selectProduct(${JSON.stringify(product).replace(/"/g, '&quot;')})" 
+                         style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; hover:background:#f8f9fa;"
+                         onmouseover="this.style.background='#f8f9fa'" 
+                         onmouseout="this.style.background='white'">
+                        <div style="font-weight: bold;">${product.brand} ${product.model}</div>
+                        <div style="font-size: 12px; color: #666;">
+                            Code: ${product.code} | Stock: ${product.stock} | 
+                            ${product.barcode ? 'Barcode: ' + product.barcode : ''}
+                            ${product.imei ? 'IMEI: ' + product.imei : ''}
+                        </div>
+                        <div style="font-size: 12px; color: #28a745;">
+                            Min: ${(product.min_selling_price || 0).toFixed(2)} EGP | 
+                            Suggested: ${(product.suggested_price || product.price || 0).toFixed(2)} EGP
+                        </div>
+                    </div>
+                `).join('');
             }
-
-            resultsDiv.innerHTML = filteredProducts.slice(0, 10).map(product => `
-                <div onclick="selectProduct(${product.id})" 
-                     style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; hover:background: #f0f0f0;"
-                     onmouseover="this.style.background='#f0f0f0'" 
-                     onmouseout="this.style.background='white'">
-                    <div style="font-weight: bold;">${product.brand} ${product.model}</div>
-                    <div style="font-size: 12px; color: #666;">${product.code} - ${product.price.toFixed(2)} EGP (Stock: ${product.stock})</div>
-                </div>
-            `).join('');
-
+            
             resultsDiv.style.display = 'block';
         }
 
-        function selectProduct(productId) {
-            selectedProduct = allProducts.find(p => p.id === productId);
+        function selectProduct(productOrId) {
+            // Handle both product object and product ID
+            if (typeof productOrId === 'object') {
+                selectedProduct = productOrId;
+            } else {
+                selectedProduct = allProducts.find(p => p.id === productOrId);
+            }
+            
             if (selectedProduct) {
                 document.getElementById('selected-product').innerHTML = `
                     <div style="color: #333;">
                         <strong>${selectedProduct.brand} ${selectedProduct.model}</strong><br>
-                        <small>Code: ${selectedProduct.code} | Min: ${selectedProduct.min_selling_price.toFixed(2)} EGP | Suggested: ${selectedProduct.suggested_price.toFixed(2)} EGP | Stock: ${selectedProduct.stock}</small>
+                        <small>Code: ${selectedProduct.code} | Min: ${(selectedProduct.min_selling_price || 0).toFixed(2)} EGP | Suggested: ${(selectedProduct.suggested_price || selectedProduct.price || 0).toFixed(2)} EGP | Stock: ${selectedProduct.stock}</small>
+                        ${selectedProduct.barcode ? `<br><small>Barcode: ${selectedProduct.barcode}</small>` : ''}
+                        ${selectedProduct.imei ? `<br><small>IMEI: ${selectedProduct.imei}</small>` : ''}
                     </div>
                 `;
 
                 // Set the suggested price in the price input
-                document.getElementById('selling-price').value = selectedProduct.suggested_price.toFixed(2);
-                document.getElementById('selling-price').min = selectedProduct.min_selling_price;
+                document.getElementById('selling-price').value = (selectedProduct.suggested_price || selectedProduct.price || selectedProduct.min_selling_price || 0).toFixed(2);
+                document.getElementById('selling-price').min = selectedProduct.min_selling_price || 0;
 
                 document.getElementById('add-product-btn').disabled = false;
                 document.getElementById('product-search-results').style.display = 'none';
-                document.getElementById('product-search').value = `${selectedProduct.brand} ${selectedProduct.model}`;
+                
+                // Clear both search inputs
+                const productSearchInput = document.getElementById('product-search');
+                const productSearchEditInput = document.getElementById('product-search-edit');
+                if (productSearchInput) {
+                    productSearchInput.value = `${selectedProduct.brand} ${selectedProduct.model}`;
+                }
+                if (productSearchEditInput) {
+                    productSearchEditInput.value = `${selectedProduct.brand} ${selectedProduct.model}`;
+                }
             }
         }
 
@@ -1637,9 +1421,36 @@ if ($_POST) {
             }
         }
 
+        // Test search function for admin dashboard
+        function testSearch() {
+            console.log('=== SEARCH TEST ===');
+            console.log('All products:', allProducts);
+            console.log('Products length:', allProducts.length);
+            
+            // Wait a moment for products to load
+            setTimeout(() => {
+                console.log('After timeout - Products length:', allProducts.length);
+                if (allProducts.length > 0) {
+                    console.log('Testing search with "iPhone"...');
+                    searchProducts('iPhone');
+                } else {
+                    alert('No products loaded. Check console for errors.');
+                    console.log('Trying to load products manually...');
+                    loadProducts();
+                }
+            }, 1000);
+        }
+
         function addToReceipt() {
+            console.log('=== ADMIN ADD TO RECEIPT ===');
+            console.log('Selected product:', selectedProduct);
+            console.log('Current receipt items:', currentReceipt.items);
+            
             const quantityInput = document.getElementById('quantity');
             const sellingPriceInput = document.getElementById('selling-price');
+            
+            console.log('Quantity input:', quantityInput.value);
+            console.log('Selling price input:', sellingPriceInput.value);
 
             if (!selectedProduct || !quantityInput.value || !sellingPriceInput.value) {
                 alert('Please select a product, enter selling price and quantity');
@@ -1648,6 +1459,9 @@ if ($_POST) {
 
             const quantity = parseInt(quantityInput.value);
             const sellingPrice = parseFloat(sellingPriceInput.value);
+            
+            console.log('Parsed quantity:', quantity);
+            console.log('Parsed selling price:', sellingPrice);
 
             if (sellingPrice < selectedProduct.min_selling_price) {
                 alert(`Selling price cannot be less than minimum price: ${selectedProduct.min_selling_price.toFixed(2)} EGP `);
@@ -1658,6 +1472,8 @@ if ($_POST) {
                 alert(`Only ${selectedProduct.stock} items available`);
                 return;
             }
+
+            console.log('All validations passed, adding to receipt...');
 
             const existingItem = currentReceipt.items.find(item => item.productId === selectedProduct.id);
 
@@ -1681,6 +1497,7 @@ if ($_POST) {
                 });
             }
 
+            console.log('Item added, new receipt items:', currentReceipt.items);
             updateReceiptDisplay();
             quantityInput.value = 1;
 
@@ -1693,10 +1510,13 @@ if ($_POST) {
         }
 
         function updateReceiptDisplay() {
+            console.log('=== UPDATE RECEIPT DISPLAY ===');
+            console.log('Current receipt items:', currentReceipt.items);
+            
             const itemsDiv = document.getElementById('receipt-items');
 
             if (currentReceipt.items.length === 0) {
-                itemsDiv.innerHTML = '<div style="text-align: center; color: #666;">No items added yet</div>';
+                itemsDiv.innerHTML = '<div class="no-data">No items added yet</div>';
             } else {
                 itemsDiv.innerHTML = currentReceipt.items.map(item => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">
@@ -1711,11 +1531,9 @@ if ($_POST) {
 
             document.getElementById('total').textContent = currentReceipt.total.toFixed(2);
             document.getElementById('complete-btn').disabled = currentReceipt.items.length === 0;
-        }
-
-        function removeFromReceipt(productId) {
-            currentReceipt.items = currentReceipt.items.filter(item => item.productId !== productId);
-            updateReceiptDisplay();
+            
+            // Update payment totals
+            updatePaymentTotals();
         }
 
         function clearReceipt() {
@@ -1724,26 +1542,63 @@ if ($_POST) {
             updateReceiptDisplay();
             document.getElementById('customer-name').value = '';
             document.getElementById('customer-phone').value = '';
-            document.getElementById('product-search').value = '';
+            
+            // Clear both search inputs
+            const productSearchInput = document.getElementById('product-search');
+            const productSearchEditInput = document.getElementById('product-search-edit');
+            if (productSearchInput) {
+                productSearchInput.value = '';
+            }
+            if (productSearchEditInput) {
+                productSearchEditInput.value = '';
+            }
+            
             document.getElementById('selected-product').innerHTML = '<div style="color: #666;">No product selected</div>';
             document.getElementById('add-product-btn').disabled = true;
             document.getElementById('product-search-results').style.display = 'none';
             document.getElementById('selling-price').value = '';
+            document.getElementById('quantity').value = '1';
+            
+            // Clear payment splits
+            const container = document.getElementById('splitPaymentContainer');
+            container.innerHTML = `
+                <div class="payment-method-row" data-payment-row="0">
+                    <select class="payment-method-select" style="width: 120px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;">
+                        <option value="">Select Method</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Visa">Visa</option>
+                        <option value="Instapay">Instapay</option>
+                        <option value="Installment">Installment</option>
+                    </select>
+                    <input type="number" class="payment-amount" placeholder="Amount" style="width: 100px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;" step="0.01" min="0">
+                    <input type="text" class="payment-reference" placeholder="Reference (optional)" style="width: 150px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;">
+                    <button class="btn btn-sm btn-danger" onclick="removePaymentRow(0)" style="display: none;">×</button>
+                </div>
+            `;
+            
+            // Re-add event listeners
+            const firstRow = document.querySelector('.payment-method-row');
+            firstRow.querySelector('.payment-method-select').addEventListener('change', updatePaymentTotals);
+            firstRow.querySelector('.payment-amount').addEventListener('input', updatePaymentTotals);
+            
+            paymentRowCount = 1;
+            updatePaymentTotals();
         }
 
-        async function completeReceipt() {
-            const customerName = document.getElementById('customer-name').value.trim();
-            if (!customerName || currentReceipt.items.length === 0) {
-                alert('Please enter customer name and add items');
-                return;
-            }
+        function removeFromReceipt(productId) {
+            currentReceipt.items = currentReceipt.items.filter(item => item.productId !== productId);
+            updateReceiptDisplay();
+        }
 
+        // Complete receipt
+        async function completeReceipt() {
             const completeBtn = document.getElementById('complete-btn');
             completeBtn.innerHTML = 'Processing...';
             completeBtn.disabled = true;
 
             try {
                 let customerId = null;
+                const customerName = document.getElementById('customer-name').value.trim();
                 const customerPhone = document.getElementById('customer-phone').value.trim();
 
                 // Try to add customer, but don't fail if it doesn't work
@@ -1762,13 +1617,44 @@ if ($_POST) {
                     }
                 }
 
+                // Create sale
+                const paymentSplits = getPaymentSplits();
+                
+                if (paymentSplits.length === 0) {
+                    alert('Please add at least one payment method');
+                    completeBtn.innerHTML = 'Complete Sale';
+                    completeBtn.disabled = false;
+                    return;
+                }
+                
                 const saleData = {
                     customer_id: customerId,
                     staff_id: <?php echo isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 'null'; ?>,
                     subtotal: currentReceipt.total,
                     tax_amount: 0,
                     total_amount: currentReceipt.total,
-                    payment_method: 'cash',
+                    payment_splits: paymentSplits,
+                    is_split_payment: paymentSplits.length > 1,
+                    staff_name: <?php echo json_encode(isset($_SESSION['name']) ? $_SESSION['name'] : 'Admin'); ?>,
+                    staff_username: <?php echo json_encode(isset($_SESSION['username']) ? $_SESSION['username'] : 'admin'); ?>,
+                    items: currentReceipt.items.map(item => ({
+                        product_id: item.productId,
+                        quantity: item.quantity,
+                        unit_price: item.price,
+                        total_price: item.total
+                    }))
+                };
+                    }
+                }
+
+                const saleData = {
+                    customer_id: customerId,
+                    staff_id: <?php echo isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 'null'; ?>,
+                    subtotal: currentReceipt.total,
+                    tax_amount: 0,
+                    total_amount: currentReceipt.total,
+                    payment_splits: getPaymentSplits(),
+                    is_split_payment: getPaymentSplits().length > 1,
                     staff_name: <?php echo json_encode(isset($_SESSION['name']) ? $_SESSION['name'] : 'Admin'); ?>,
                     staff_username: <?php echo json_encode(isset($_SESSION['username']) ? $_SESSION['username'] : 'admin'); ?>,
                     items: currentReceipt.items.map(item => ({
@@ -1797,7 +1683,7 @@ if ($_POST) {
                         try {
                             const errorJson = JSON.parse(errorText);
                             alert('Server error: ' + (errorJson.message || errorText));
-                        } catch {
+                        } catch (parseError) {
                             alert('Server error: ' + saleResponse.status + ' - ' + (errorText.substring(0, 200) || 'Unknown error'));
                         }
                     } catch (e) {
@@ -2147,10 +2033,11 @@ if ($_POST) {
             try {
                 const incomeResponse = await fetch('api/income.php');
                 const incomeResult = await incomeResponse.json();
-
+                
                 if (incomeResult.success) {
                     let incomeToAdd = incomeResult.data;
-
+                    console.log('Income entries found:', incomeToAdd.length);
+                    
                     // Filter income entries by the same time period as sales
                     if (isToday) {
                         const today = new Date().toDateString();
@@ -2163,12 +2050,16 @@ if ($_POST) {
                             new Date(entry.entry_date).getMonth() === thisMonth
                         );
                     }
-
+                    
                     const totalIncome = incomeToAdd.reduce((sum, entry) => sum + entry.price, 0);
+                    console.log('Total income calculated:', totalIncome);
                     totalProfit += totalIncome;
+                } else {
+                    console.error('Error calculating income profit:', incomeResult.error || 'Unknown error');
+                    // Continue with sales profit only if income calculation fails
                 }
-            } catch (incomeError) {
-                console.error('Error calculating income profit:', incomeError);
+            } catch (error) {
+                console.error('Error calculating income profit:', error);
                 // Continue with sales profit only if income calculation fails
             }
 
@@ -2176,10 +2067,11 @@ if ($_POST) {
             try {
                 const paymentResponse = await fetch('api/payment.php');
                 const paymentResult = await paymentResponse.json();
-
+                
                 if (paymentResult.success) {
                     let paymentsToSubtract = paymentResult.data;
-
+                    console.log('Payment entries found:', paymentsToSubtract.length);
+                    
                     // Filter payment entries by the same time period as sales
                     if (isToday) {
                         const today = new Date().toDateString();
@@ -2192,9 +2084,13 @@ if ($_POST) {
                             new Date(entry.entry_date).getMonth() === thisMonth
                         );
                     }
-
+                    
                     const totalPayments = paymentsToSubtract.reduce((sum, entry) => sum + entry.price, 0);
+                    console.log('Total payments calculated:', totalPayments);
                     totalProfit -= totalPayments;
+                } else {
+                    console.error('Error calculating payment deductions:', paymentError);
+                    // Continue with current profit if payment calculation fails
                 }
             } catch (paymentError) {
                 console.error('Error calculating payment deductions:', paymentError);
@@ -2424,7 +2320,7 @@ if ($_POST) {
                         try {
                             const errorJson = JSON.parse(errorText);
                             alert('Server error: ' + (errorJson.message || errorText));
-                        } catch {
+                        } catch (parseError) {
                             alert('Server error: ' + response.status + ' - ' + (errorText.substring(0, 200) || 'Unknown error'));
                         }
                     } catch (e) {
@@ -3174,9 +3070,9 @@ if ($_POST) {
             tbody.innerHTML = incomeEntries.map(entry => `
                 <tr>
                     <td>${new Date(entry.entry_date).toLocaleDateString()}</td>
-                    <td>${entry.price.toFixed(2)} EGP</td>
-                    <td>${entry.description}</td>
                     <td>${entry.created_by_name}</td>
+                    <td>${entry.description}</td>
+                    <td>${entry.price.toFixed(2)} EGP</td>
                     <td>
                         <button class="btn btn-sm" onclick="editIncomeEntry(${entry.id})" style="padding: 3px 8px; font-size: 12px; margin-right: 5px;">
                             ✏️ Edit
@@ -3233,7 +3129,7 @@ if ($_POST) {
                         try {
                             const errorJson = JSON.parse(errorText);
                             alert('Server error: ' + (errorJson.message || errorText));
-                        } catch {
+                        } catch (parseError) {
                             alert('Server error: ' + response.status + ' - ' + (errorText.substring(0, 200) || 'Unknown error'));
                         }
                     } catch (e) {
@@ -3350,9 +3246,9 @@ if ($_POST) {
             tbody.innerHTML = paymentEntries.map(entry => `
                 <tr>
                     <td>${new Date(entry.entry_date).toLocaleDateString()}</td>
-                    <td>${entry.price.toFixed(2)} EGP</td>
-                    <td>${entry.description}</td>
                     <td>${entry.created_by_name}</td>
+                    <td>${entry.description}</td>
+                    <td>${entry.price.toFixed(2)} EGP</td>
                     <td>
                         <button class="btn btn-sm" onclick="editPaymentEntry(${entry.id})" style="padding: 3px 8px; font-size: 12px; margin-right: 5px;">
                             ✏️ Edit
@@ -3409,7 +3305,7 @@ if ($_POST) {
                         try {
                             const errorJson = JSON.parse(errorText);
                             alert('Server error: ' + (errorJson.message || errorText));
-                        } catch {
+                        } catch (parseError) {
                             alert('Server error: ' + response.status + ' - ' + (errorText.substring(0, 200) || 'Unknown error'));
                         }
                     } catch (e) {
