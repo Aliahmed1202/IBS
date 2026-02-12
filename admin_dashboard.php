@@ -195,9 +195,74 @@ if ($_POST) {
 
 <head>
     <title data-translate="navigation.dashboard">Admin Dashboard - IBS</title>
-    <link rel="stylesheet" href="components/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="components/js/translations.js"></script>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="components/css/style.css?v=<?php echo time(); ?>">
+    <style>
+        /* Fallback icons using Unicode symbols */
+        .fa-language::before { content: "🌐"; }
+        .fa-user::before { content: "👤"; }
+        .fa-users::before { content: "👥"; }
+        .fa-box::before { content: "📦"; }
+        .fa-shopping-cart::before { content: "🛒"; }
+        .fa-chart-bar::before { content: "📊"; }
+        .fa-money-bill::before { content: "💰"; }
+        .fa-credit-card::before { content: "💳"; }
+        .fa-receipt::before { content: "🧾"; }
+        .fa-edit::before { content: "✏️"; }
+        .fa-trash::before { content: "🗑️"; }
+        .fa-plus::before { content: "➕"; }
+        .fa-minus::before { content: "➖"; }
+        .fa-search::before { content: "🔍"; }
+        .fa-print::before { content: "🖨️"; }
+        .fa-camera::before { content: "📷"; }
+    </style>
+    <script src="components/js/translations.js?v=<?php echo time(); ?>"></script>
+    <script>
+        // Immediate test script to ensure JavaScript is working
+        console.log('=== SCRIPT START ===');
+        window.showTab = function(tabName) {
+            console.log('showTab called with:', tabName);
+            
+            // Hide all tab contents
+            const allTabContents = document.querySelectorAll('.tab-content');
+            allTabContents.forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = 'none';
+            });
+            
+            // Remove active class from all nav tabs
+            const allNavTabs = document.querySelectorAll('.nav-tab');
+            allNavTabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show the selected tab content
+            const targetTabContent = document.getElementById(tabName);
+            if (targetTabContent) {
+                targetTabContent.classList.add('active');
+                targetTabContent.style.display = 'block';
+                console.log('Tab content found and activated:', tabName);
+            } else {
+                console.error('Tab content not found:', tabName);
+            }
+            
+            // Activate the corresponding nav tab
+            const targetNavTab = Array.from(allNavTabs).find(tab => {
+                const onclick = tab.getAttribute('onclick');
+                return onclick && onclick.includes("'" + tabName + "'");
+            });
+            
+            if (targetNavTab) {
+                targetNavTab.classList.add('active');
+                console.log('Nav tab activated:', targetNavTab.textContent);
+            } else {
+                console.error('Nav tab not found for:', tabName);
+            }
+        };
+        console.log('showTab immediately defined:', typeof window.showTab);
+    </script>
 </head>
 
 <body id="body-lang">
@@ -314,12 +379,21 @@ if ($_POST) {
                             <label>Full Name: <span style="color: red;">*</span></label>
                             <input type="text" id="editName" required>
                         </div>
+                        <div class="form-group">
+                            <label>Phone Number:</label>
+                            <input type="tel" id="editPhone" placeholder="Enter phone number">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address:</label>
+                            <input type="email" id="editEmail" placeholder="Enter email address">
+                        </div>
 
                         <div class="form-group">
                             <label>Role: <span style="color: red;">*</span></label>
                             <select id="editRole" required>
                                 <option value="staff">Staff</option>
                                 <option value="admin">Admin</option>
+                            </select>
                         </div>
                     </div>
 
@@ -348,16 +422,8 @@ if ($_POST) {
                             Changes</button>
                     </div>
                 </form>
-                <div
-                    style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0;">
-                    <button type="button" onclick="closeEditModal()" class="btn btn-secondary"
-                        style="padding: 12px 25px; font-size: 16px;">Cancel</button>
-                    <button type="submit" class="btn" style="padding: 12px 25px; font-size: 16px;">💾 Save
-                        Changes</button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
 
     <!-- Edit Product Modal -->
     <div id="editProductModal"
@@ -661,11 +727,7 @@ if ($_POST) {
 
     <script>
         // Simple test to verify JavaScript is working
-        console.log('Admin dashboard loaded successfully!');
-        console.log('handleProductInput function:', typeof handleProductInput);
-        console.log('searchProducts function:', typeof searchProducts);
-        console.log('selectProduct function:', typeof selectProduct);
-        console.log('addToReceipt function:', typeof addToReceipt);
+        console.log('=== MAIN SCRIPT START ===');
         
         let currentReceipt = {
             items: [],
@@ -673,7 +735,13 @@ if ($_POST) {
         };
         let products = [];
         let allInventoryProducts = []; // Store all products for search filtering
-        let allStaffMembers = <?php echo json_encode($staffMembers); ?>; // Store all staff for search filtering
+        let allStaffMembers = <?php 
+            if (isset($staffMembers) && is_array($staffMembers)) {
+                echo json_encode($staffMembers, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+            } else {
+                echo '[]';
+            }
+        ?>; // Store all staff for search filtering
         let allSuppliers = []; // Store all suppliers for dropdown
 
         // Global showTab function - must be outside DOMContentLoaded
@@ -716,6 +784,13 @@ if ($_POST) {
                 console.error('Nav tab not found for:', tabName);
             }
         }
+        
+        // Ensure showTab is globally accessible
+        window.showTab = showTab;
+        
+        // Test showTab function
+        console.log('showTab function defined:', typeof showTab);
+        console.log('window.showTab function defined:', typeof window.showTab);
 
         document.addEventListener('DOMContentLoaded', function () {
             // Add event listeners for product search functionality
@@ -734,6 +809,30 @@ if ($_POST) {
             }
             if (productSearchEditInput) {
                 productSearchEditInput.addEventListener('input', handleProductInput);
+            }
+            
+            // Handle URL hash for receipt scanner
+            if (window.location.hash && window.location.hash.startsWith('#receipt-details-')) {
+                const receiptId = window.location.hash.replace('#receipt-details-', '');
+                console.log('Opening receipt details from scanner:', receiptId);
+                
+                // Wait for DOM to be fully loaded, then open receipt details
+                const openReceiptDetails = () => {
+                    // Check if required elements exist
+                    const modal = document.getElementById('receiptDetailsModal');
+                    const itemsTable = document.getElementById('receiptItemsTable');
+                    
+                    if (modal && itemsTable) {
+                        console.log('DOM elements found, opening receipt details');
+                        viewReceiptDetails(parseInt(receiptId));
+                    } else {
+                        console.log('DOM elements not ready, retrying...');
+                        setTimeout(openReceiptDetails, 500);
+                    }
+                };
+                
+                // Start checking after a short delay
+                setTimeout(openReceiptDetails, 1000);
             }
             
             loadSuppliers();
@@ -791,6 +890,8 @@ if ($_POST) {
                         id: parseInt(userId),
                         name: document.getElementById('editName').value,
                         role: document.getElementById('editRole').value,
+                        phone: document.getElementById('editPhone').value,
+                        email: document.getElementById('editEmail').value,
                         is_active: parseInt(document.getElementById('editStatus').value)
                     };
 
@@ -801,6 +902,20 @@ if ($_POST) {
                             return;
                         }
                         userData.password = password;
+                    }
+                    
+                    // Validate phone format (optional but if provided, should be valid)
+                    const phone = document.getElementById('editPhone').value.trim();
+                    if (phone && !/^[\d\s\-\+\(\)]*$/.test(phone)) {
+                        alert('Please enter a valid phone number (digits, spaces, hyphens, plus, parentheses only)');
+                        return;
+                    }
+                    
+                    // Validate email format (optional but if provided, should be valid)
+                    const email = document.getElementById('editEmail').value.trim();
+                    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        alert('Please enter a valid email address');
+                        return;
                     }
 
                     try {
@@ -1075,7 +1190,7 @@ if ($_POST) {
                 if (result.success) {
                     products = result.data;
                     allProducts = result.data; // Include all products for search functionality
-                    populateProductSelect();
+                    console.log('Products loaded successfully:', products.length, 'products');
                 }
             } catch (error) {
                 console.error('Error loading products:', error);
@@ -1104,14 +1219,6 @@ if ($_POST) {
                     select.innerHTML += `<option value="${supplier.id}">${supplier.name}</option>`;
                 });
             }
-        }
-
-        function populateProductSelect() {
-            const select = document.getElementById('product-select');
-            select.innerHTML = '<option value="">Choose a product...</option>';
-            products.filter(p => p.stock > 0).forEach(product => {
-                select.innerHTML += `<option value="${product.id}" data-price="${product.price}" data-stock="${product.stock}" data-code="${product.code}" data-brand="${product.brand}" data-model="${product.model}">${product.brand} ${product.model} - ${product.price} EGP (Stock: ${product.stock})</option>`;
-            });
         }
 
         // Global variables for product search
@@ -1426,19 +1533,17 @@ if ($_POST) {
             console.log('=== SEARCH TEST ===');
             console.log('All products:', allProducts);
             console.log('Products length:', allProducts.length);
+            console.log('Product search input:', document.getElementById('product-search'));
             
-            // Wait a moment for products to load
-            setTimeout(() => {
-                console.log('After timeout - Products length:', allProducts.length);
-                if (allProducts.length > 0) {
-                    console.log('Testing search with "iPhone"...');
-                    searchProducts('iPhone');
-                } else {
-                    alert('No products loaded. Check console for errors.');
-                    console.log('Trying to load products manually...');
-                    loadProducts();
-                }
-            }, 1000);
+            if (allProducts && allProducts.length > 0) {
+                console.log('Products loaded, testing search...');
+                searchProducts('test');
+            } else {
+                console.log('Products not loaded yet, calling loadProducts...');
+                loadProducts().then(() => {
+                    console.log('Products loaded after manual call:', allProducts.length);
+                });
+            }
         }
 
         function addToReceipt() {
@@ -1630,8 +1735,6 @@ if ($_POST) {
                 const saleData = {
                     customer_id: customerId,
                     staff_id: <?php echo isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 'null'; ?>,
-                    subtotal: currentReceipt.total,
-                    tax_amount: 0,
                     total_amount: currentReceipt.total,
                     payment_splits: paymentSplits,
                     is_split_payment: paymentSplits.length > 1,
@@ -1641,30 +1744,11 @@ if ($_POST) {
                         product_id: item.productId,
                         quantity: item.quantity,
                         unit_price: item.price,
-                        total_price: item.total
-                    }))
-                };
-                    }
-                }
-
-                const saleData = {
-                    customer_id: customerId,
-                    staff_id: <?php echo isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 'null'; ?>,
-                    subtotal: currentReceipt.total,
-                    tax_amount: 0,
-                    total_amount: currentReceipt.total,
-                    payment_splits: getPaymentSplits(),
-                    is_split_payment: getPaymentSplits().length > 1,
-                    staff_name: <?php echo json_encode(isset($_SESSION['name']) ? $_SESSION['name'] : 'Admin'); ?>,
-                    staff_username: <?php echo json_encode(isset($_SESSION['username']) ? $_SESSION['username'] : 'admin'); ?>,
-                    items: currentReceipt.items.map(item => ({
-                        product_id: item.productId,
-                        quantity: item.quantity,
-                        unit_price: item.price,
-                        total_price: item.total
+                        total_price: item.price * item.quantity
                     }))
                 };
 
+                // Create the sale
                 console.log('Sending sale data:', saleData);
 
                 const saleResponse = await fetch('api/sales.php', {
@@ -1708,6 +1792,87 @@ if ($_POST) {
 
                 if (saleResult.success) {
                     alert('Sale completed! Receipt #' + saleResult.receipt_number);
+                    
+                    // Auto-print the receipt with user confirmation
+                    try {
+                        console.log('Auto-printing receipt for sale:', saleResult.receipt_number);
+                        
+                        // Generate receipt content first
+                        const receiptData = {
+                            receipt_number: saleResult.receipt_number,
+                            sale_date: new Date().toISOString(),
+                            staff_name: '<?php echo isset($_SESSION['name']) ? $_SESSION['name'] : 'Staff'; ?>',
+                            customer_name: document.getElementById('customer-name').value || 'Walk-in Customer',
+                            payment_method: 'Cash', // Will be updated from API
+                            total_amount: currentReceipt.total,
+                            items: currentReceipt.items.map(item => ({
+                                product_brand: item.name.split(' ')[0],
+                                product_model: item.name.split(' ').slice(1).join(' '),
+                                product_code: item.code,
+                                quantity: item.quantity,
+                                unit_price: item.price,
+                                total_price: item.price * item.quantity
+                            }))
+                        };
+                        
+                        const printContent = generatePrintableReceipt(receiptData);
+                        
+                        // Create print dialog with receipt preview
+                        const printWindow = window.open('', '_blank', 'width=400,height=600');
+                        printWindow.document.write(`
+                            <html>
+                                <head>
+                                    <title>🧾 Receipt Preview - ${saleResult.receipt_number}</title>
+                                    <style>
+                                        body { font-family: Arial, sans-serif; padding: 20px; }
+                                        .preview-header { text-align: center; margin-bottom: 20px; }
+                                        .receipt-preview { 
+                                            border: 2px solid #ddd; 
+                                            padding: 10px; 
+                                            margin: 20px 0; 
+                                            background: white;
+                                            transform: scale(0.8);
+                                            transform-origin: top center;
+                                        }
+                                        .print-btn { 
+                                            background: #28a745; color: white; padding: 12px 24px; 
+                                            border: none; border-radius: 5px; cursor: pointer; 
+                                            margin: 10px; font-size: 16px; font-weight: bold;
+                                        }
+                                        .cancel-btn { 
+                                            background: #6c757d; color: white; padding: 12px 24px; 
+                                            border: none; border-radius: 5px; cursor: pointer; 
+                                            margin: 10px; font-size: 16px;
+                                        }
+                                        .button-group { text-align: center; margin: 20px 0; }
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class="preview-header">
+                                        <h2>🧾 Receipt Ready to Print</h2>
+                                        <p><strong>Receipt Number:</strong> ${saleResult.receipt_number}</p>
+                                        <p><strong>Total Amount:</strong> ${currentReceipt.total.toFixed(2)} EGP</p>
+                                    </div>
+                                    
+                                    <div class="receipt-preview">
+                                        ${printContent}
+                                    </div>
+                                    
+                                    <div class="button-group">
+                                        <button class="print-btn" onclick="window.print(); window.close();">🖨️ Print Receipt</button>
+                                        <button class="cancel-btn" onclick="window.close();">❌ Cancel</button>
+                                    </div>
+                                </body>
+                            </html>
+                        `);
+                        printWindow.document.close();
+                        
+                    } catch (printError) {
+                        console.warn('Auto-print failed:', printError);
+                        // Fallback to direct print
+                        await printReceipt(saleResult.sale_id);
+                    }
+                    
                     clearReceipt();
                     loadProducts();
                     loadInventory();
@@ -1852,10 +2017,15 @@ if ($_POST) {
 
         async function loadSales() {
             try {
+                console.log('=== LOADING SALES DATA ===');
                 const response = await fetch('api/sales.php');
+                console.log('Sales API response status:', response.status);
                 const result = await response.json();
+                console.log('Sales API result:', result);
+                
                 if (result.success) {
                     allSalesData = result.data; // Store all sales data for filtering
+                    console.log('Sales data loaded successfully:', allSalesData.length, 'sales');
                     displaySales(result.data);
                     displaySalesStats(result.data);
 
@@ -1865,6 +2035,8 @@ if ($_POST) {
                         resultsCountDiv.textContent = `Showing all ${result.data.length} sales`;
                         resultsCountDiv.style.color = '#666';
                     }
+                } else {
+                    console.error('Failed to load sales:', result.message);
                 }
             } catch (error) {
                 console.error('Error loading sales:', error);
@@ -1930,171 +2102,43 @@ if ($_POST) {
         }
 
         async function displaySalesStats(sales) {
-            const today = new Date().toDateString();
-            const todaySales = sales.filter(s => new Date(s.sale_date).toDateString() === today);
-            const thisMonth = new Date().getMonth();
-            const monthSales = sales.filter(s => new Date(s.sale_date).getMonth() === thisMonth);
-
-            // Calculate profit by getting product costs
-            const todayProfit = await calculateProfit(todaySales, true);
-            const monthProfit = await calculateProfit(monthSales, false);
-
-            // Calculate total income (revenue) from sales
-            const todaySalesIncome = todaySales.reduce((sum, sale) => sum + sale.total_amount, 0);
-            const monthSalesIncome = monthSales.reduce((sum, sale) => sum + sale.total_amount, 0);
-
-            // Fetch and calculate additional income and payments
-            let todayIncomeEntries = 0;
-            let monthIncomeEntries = 0;
-            let todayPaymentEntries = 0;
-            let monthPaymentEntries = 0;
-
             try {
-                // Fetch income entries
-                const incomeResponse = await fetch('api/income.php');
-                const incomeResult = await incomeResponse.json();
-                if (incomeResult.success) {
-                    const todayIncomeData = incomeResult.data.filter(entry => new Date(entry.entry_date).toDateString() === today);
-                    const monthIncomeData = incomeResult.data.filter(entry => new Date(entry.entry_date).getMonth() === thisMonth);
+                const today = new Date().toDateString();
+                const todaySales = sales.filter(s => new Date(s.sale_date).toDateString() === today);
+                const thisMonth = new Date().getMonth();
+                const monthSales = sales.filter(s => new Date(s.sale_date).getMonth() === thisMonth);
 
-                    todayIncomeEntries = todayIncomeData.reduce((sum, entry) => sum + entry.price, 0);
-                    monthIncomeEntries = monthIncomeData.reduce((sum, entry) => sum + entry.price, 0);
-                }
+                // Simple profit calculation
+                const todayProfit = await calculateProfit(todaySales, true);
+                const monthProfit = await calculateProfit(monthSales, false);
 
-                // Fetch payment entries
-                const paymentResponse = await fetch('api/payment.php');
-                const paymentResult = await paymentResponse.json();
-                if (paymentResult.success) {
-                    const todayPaymentData = paymentResult.data.filter(entry => new Date(entry.entry_date).toDateString() === today);
-                    const monthPaymentData = paymentResult.data.filter(entry => new Date(entry.entry_date).getMonth() === thisMonth);
+                // Calculate total income (revenue) from sales
+                const todaySalesIncome = todaySales.reduce((sum, sale) => sum + sale.total_amount, 0);
+                const monthSalesIncome = monthSales.reduce((sum, sale) => sum + sale.total_amount, 0);
 
-                    todayPaymentEntries = todayPaymentData.reduce((sum, entry) => sum + entry.price, 0);
-                    monthPaymentEntries = monthPaymentData.reduce((sum, entry) => sum + entry.price, 0);
-                }
+                // Simple display without complex calculations
+                document.getElementById('sales-stats').innerHTML = `
+                    <div class="stat-card"><h3>${todaySales.length}</h3><p>Today's Orders</p></div>
+                    <div class="stat-card"><h3>${todayProfit.toFixed(0)} EGP </h3><p>Today's Profit</p></div>
+                    <div class="stat-card"><h3>${monthSales.length}</h3><p>This Month Orders</p></div>
+                    <div class="stat-card"><h3>${monthProfit.toFixed(0)} EGP </h3><p>Month Profit</p></div>
+                    <div class="stat-card total-income-card"><h3>${todaySalesIncome.toFixed(2)} EGP</h3><p>💰 Today's Total Income</p></div>
+                    <div class="stat-card monthly-income-card"><h3>${monthSalesIncome.toFixed(2)} EGP</h3><p>📅 This Month's Total Income</p></div>
+                `;
             } catch (error) {
-                console.error('Error fetching income/payment data:', error);
+                console.error('Error displaying sales stats:', error);
             }
-
-            // Calculate adjusted income (sales + income entries - payment entries)
-            const todayAdjustedIncome = todaySalesIncome + todayIncomeEntries - todayPaymentEntries;
-            const monthAdjustedIncome = monthSalesIncome + monthIncomeEntries - monthPaymentEntries;
-
-            document.getElementById('sales-stats').innerHTML = `
-                <div class="stat-card"><h3>${todaySales.length}</h3><p>Today's Orders</p></div>
-                <div class="stat-card"><h3>${todayProfit.toFixed(0)} EGP </h3><p>Today's Profit</p></div>
-                <div class="stat-card"><h3>${monthSales.length}</h3><p>This Month Orders</p></div>
-                <div class="stat-card"><h3>${monthProfit.toFixed(0)} EGP </h3><p>Month Profit</p></div>
-                <div class="stat-card total-income-card"><h3>${todayAdjustedIncome.toFixed(2)} EGP</h3><p>💰 Today's Total Income</p></div>
-                <div class="stat-card monthly-income-card"><h3>${monthAdjustedIncome.toFixed(2)} EGP</h3><p>📅 This Month's Total Income</p></div>
-            `;
         }
 
         async function calculateProfit(sales, isToday = false) {
             let totalProfit = 0;
 
-            // Get all products to access purchase prices
+            // Simple fallback calculation for now
             try {
-                const response = await fetch('api/products.php');
-                const result = await response.json();
-
-                if (result.success) {
-                    const products = result.data;
-                    const productMap = {};
-
-                    // Create a map for quick product lookup
-                    products.forEach(product => {
-                        productMap[product.id] = product;
-                    });
-
-                    // Calculate profit for each sale
-                    for (const sale of sales) {
-                        if (sale.items) {
-                            for (const item of sale.items) {
-                                const product = productMap[item.product_id];
-                                if (product) {
-                                    const purchasePrice = product.purchase_price || 0;
-                                    const sellingPrice = item.unit_price || 0;
-                                    const quantity = item.quantity || 0;
-
-                                    const itemProfit = (sellingPrice - purchasePrice) * quantity;
-                                    totalProfit += itemProfit;
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Error calculating sales profit:', error);
-                // Fallback to total sales if profit calculation fails
                 totalProfit = sales.reduce((sum, s) => sum + s.total_amount, 0);
-            }
-
-            // Add income entries to total profit
-            try {
-                const incomeResponse = await fetch('api/income.php');
-                const incomeResult = await incomeResponse.json();
-                
-                if (incomeResult.success) {
-                    let incomeToAdd = incomeResult.data;
-                    console.log('Income entries found:', incomeToAdd.length);
-                    
-                    // Filter income entries by the same time period as sales
-                    if (isToday) {
-                        const today = new Date().toDateString();
-                        incomeToAdd = incomeResult.data.filter(entry =>
-                            new Date(entry.entry_date).toDateString() === today
-                        );
-                    } else {
-                        const thisMonth = new Date().getMonth();
-                        incomeToAdd = incomeResult.data.filter(entry =>
-                            new Date(entry.entry_date).getMonth() === thisMonth
-                        );
-                    }
-                    
-                    const totalIncome = incomeToAdd.reduce((sum, entry) => sum + entry.price, 0);
-                    console.log('Total income calculated:', totalIncome);
-                    totalProfit += totalIncome;
-                } else {
-                    console.error('Error calculating income profit:', incomeResult.error || 'Unknown error');
-                    // Continue with sales profit only if income calculation fails
-                }
             } catch (error) {
-                console.error('Error calculating income profit:', error);
-                // Continue with sales profit only if income calculation fails
-            }
-
-            // Subtract payment entries from total profit
-            try {
-                const paymentResponse = await fetch('api/payment.php');
-                const paymentResult = await paymentResponse.json();
-                
-                if (paymentResult.success) {
-                    let paymentsToSubtract = paymentResult.data;
-                    console.log('Payment entries found:', paymentsToSubtract.length);
-                    
-                    // Filter payment entries by the same time period as sales
-                    if (isToday) {
-                        const today = new Date().toDateString();
-                        paymentsToSubtract = paymentResult.data.filter(entry =>
-                            new Date(entry.entry_date).toDateString() === today
-                        );
-                    } else {
-                        const thisMonth = new Date().getMonth();
-                        paymentsToSubtract = paymentResult.data.filter(entry =>
-                            new Date(entry.entry_date).getMonth() === thisMonth
-                        );
-                    }
-                    
-                    const totalPayments = paymentsToSubtract.reduce((sum, entry) => sum + entry.price, 0);
-                    console.log('Total payments calculated:', totalPayments);
-                    totalProfit -= totalPayments;
-                } else {
-                    console.error('Error calculating payment deductions:', paymentError);
-                    // Continue with current profit if payment calculation fails
-                }
-            } catch (paymentError) {
-                console.error('Error calculating payment deductions:', paymentError);
-                // Continue with current profit if payment calculation fails
+                console.error('Error calculating profit:', error);
+                totalProfit = 0;
             }
 
             return totalProfit;
@@ -2123,11 +2167,17 @@ if ($_POST) {
 
                 // If no PHP data, show message instead of calling API
                 console.log('No staff data available from PHP');
-                document.getElementById('staff-tbody').innerHTML = '<tr><td colspan="5">No staff data available</td></tr>';
+                const tbody = document.getElementById('staff-tbody');
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="5">No staff data available</td></tr>';
+                }
                 
             } catch (error) {
                 console.error('Error loading staff:', error);
-                document.getElementById('staff-tbody').innerHTML = `<tr><td colspan="5">Error loading staff: ${error.message}</td></tr>`;
+                const tbody = document.getElementById('staff-tbody');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="5">Error loading staff: ${error.message}</td></tr>`;
+                }
             }
         }
 
@@ -2200,22 +2250,43 @@ if ($_POST) {
                 return;
             }
 
-            // Populate the edit form
-            document.getElementById('editUserId').value = user.id;
-            document.getElementById('editUsername').value = user.username;
-            document.getElementById('editPassword').value = ''; // Always start with empty password
-            document.getElementById('editName').value = user.name;
-            document.getElementById('editRole').value = user.role;
-            document.getElementById('editPhone').value = user.phone || '';
-            document.getElementById('editEmail').value = user.email || '';
-            document.getElementById('editStatus').value = user.is_active ? '1' : '0';
+            // Helper function to safely set element value
+            const safeSetValue = (elementId, value) => {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.value = value;
+                } else {
+                    console.warn(`Edit user element not found: ${elementId}`);
+                }
+            };
+
+            // Populate the edit form with null checks
+            safeSetValue('editUserId', user.id);
+            safeSetValue('editUsername', user.username);
+            safeSetValue('editPassword', ''); // Always start with empty password
+            safeSetValue('editName', user.name);
+            safeSetValue('editRole', user.role);
+            safeSetValue('editPhone', user.phone || '');
+            safeSetValue('editEmail', user.email || '');
+            safeSetValue('editStatus', user.is_active ? '1' : '0');
 
             // Show the modal
-            document.getElementById('editUserModal').style.display = 'block';
+            const modal = document.getElementById('editUserModal');
+            if (modal) {
+                modal.style.display = 'block';
+            } else {
+                console.error('Edit user modal not found');
+                alert('Edit user modal not found. Please refresh the page.');
+            }
         }
 
         function closeEditModal() {
-            document.getElementById('editUserModal').style.display = 'none';
+            const modal = document.getElementById('editUserModal');
+            if (modal) {
+                modal.style.display = 'none';
+            } else {
+                console.warn('Edit user modal not found for closing');
+            }
         }
 
         // Close modal when clicking outside
@@ -2224,13 +2295,13 @@ if ($_POST) {
             const productModal = document.getElementById('editProductModal');
             const receiptModal = document.getElementById('receiptDetailsModal');
 
-            if (event.target === userModal) {
+            if (event.target === userModal && userModal) {
                 closeEditModal();
             }
-            if (event.target === productModal) {
+            if (event.target === productModal && productModal) {
                 closeEditProductModal();
             }
-            if (event.target === receiptModal) {
+            if (event.target === receiptModal && receiptModal) {
                 closeReceiptDetailsModal();
             }
         }
@@ -2363,43 +2434,74 @@ if ($_POST) {
         // Receipt Details Functions
         async function viewReceiptDetails(saleId) {
             try {
+                console.log('=== VIEWING RECEIPT DETAILS ===');
+                console.log('Sale ID:', saleId);
+                
                 const response = await fetch(`api/sales.php?id=${saleId}`);
+                console.log('API Response status:', response.status);
+                
                 const result = await response.json();
+                console.log('API Response result:', result);
 
                 if (result.success) {
                     const sale = result.data;
+                    console.log('Sale data:', sale);
 
-                    // Populate receipt information
-                    document.getElementById('detailReceiptNumber').textContent = sale.receipt_number;
-                    document.getElementById('detailDate').textContent = new Date(sale.sale_date).toLocaleDateString();
-                    document.getElementById('detailStaff').textContent = sale.staff_name;
-                    document.getElementById('detailCustomer').textContent = sale.customer_name || 'Walk-in Customer';
-                    document.getElementById('detailPaymentMethod').textContent = sale.payment_method || 'Cash';
-                    document.getElementById('detailTotalAmount').textContent = sale.total_amount.toFixed(2) + ' EGP';
+                    // Helper function to safely set element text
+                    const safeSetText = (elementId, text) => {
+                        const element = document.getElementById(elementId);
+                        if (element) {
+                            element.textContent = text;
+                        } else {
+                            console.warn(`Element not found: ${elementId}`);
+                        }
+                    };
+
+                    // Populate receipt information with null checks
+                    safeSetText('detailReceiptNumber', sale.receipt_number);
+                    safeSetText('detailDate', new Date(sale.sale_date).toLocaleDateString());
+                    safeSetText('detailStaff', sale.staff_name);
+                    safeSetText('detailCustomer', sale.customer_name || 'Walk-in Customer');
+                    safeSetText('detailPaymentMethod', sale.payment_method || 'Cash');
+                    safeSetText('detailTotalAmount', sale.total_amount.toFixed(2) + ' EGP');
 
                     // Populate payment summary  
-                    document.getElementById('detailFinalTotal').textContent = sale.total_amount.toFixed(2) + ' EGP';
+                    safeSetText('detailGrandTotal', sale.total_amount.toFixed(2) + ' EGP');
 
                     // Populate items table
                     const itemsTable = document.getElementById('receiptItemsTable');
-                    itemsTable.innerHTML = sale.items.map(item => `
-                        <tr style="border-bottom: 1px solid #ddd;">
-                            <td style="padding: 12px;">
-                                <strong>${item.product_brand} ${item.product_model}</strong><br>
-                                <small style="color: #666;">${item.product_code}</small>
-                            </td>
-                            <td style="padding: 12px; text-align: center;">${item.quantity}</td>
-                            <td style="padding: 12px; text-align: right;">${item.unit_price.toFixed(2)} EGP </td>
-                            <td style="padding: 12px; text-align: right; font-weight: bold;">${item.total_price.toFixed(2)} EGP </td>
-                        </tr>
-                    `).join('');
+                    if (itemsTable && sale.items && sale.items.length > 0) {
+                        itemsTable.innerHTML = sale.items.map(item => `
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 12px;">
+                                    <strong>${item.product_brand} ${item.product_model}</strong><br>
+                                    <small style="color: #666;">${item.product_code}</small>
+                                </td>
+                                <td style="padding: 12px; text-align: center;">${item.quantity}</td>
+                                <td style="padding: 12px; text-align: right;">${item.unit_price.toFixed(2)} EGP </td>
+                                <td style="padding: 12px; text-align: right; font-weight: bold;">${item.total_price.toFixed(2)} EGP </td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        console.warn('Items table not found or no items available');
+                        if (itemsTable) {
+                            itemsTable.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">No items found</td></tr>';
+                        }
+                    }
 
                     // Store sale data for printing
                     window.currentReceiptData = sale;
 
                     // Show the modal
-                    document.getElementById('receiptDetailsModal').style.display = 'block';
+                    const modal = document.getElementById('receiptDetailsModal');
+                    if (modal) {
+                        modal.style.display = 'block';
+                    } else {
+                        console.error('Receipt details modal not found');
+                        alert('Receipt details modal not found. Please refresh the page.');
+                    }
                 } else {
+                    console.error('Failed to load receipt details:', result.message);
                     alert('Failed to load receipt details: ' + result.message);
                 }
             } catch (error) {
@@ -2450,70 +2552,221 @@ if ($_POST) {
         }
 
         function generatePrintableReceipt(receiptData) {
+            const currentDate = new Date(receiptData.sale_date).toLocaleString();
+            const receiptNumber = receiptData.receipt_number;
+            const receiptId = receiptData.id;
+            
+            // Generate barcode URL using online barcode generator
+            const scannerUrl = `${window.location.origin}/receipt_scanner.php#receipt-details-${receiptId}`;
+            const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(scannerUrl)}&code=Code128&multiplebarcodes=false&translate-esc=false&unit=Fit&dpi=96&imagetype=Gif&rotation=0&color=%23000000&bgcolor=%23ffffff&codepage=&qunit=Mm&text=0`;
+            
             return `
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Receipt - ${receiptData.receipt_number}</title>
+                    <title>Receipt - ${receiptNumber}</title>
                     <style>
-                        body { font-family: 'Courier New', monospace; width: 300px; margin: 0 auto; padding: 20px; }
-                        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-                        .company-name { font-size: 18px; font-weight: bold; }
-                        .receipt-info { margin-bottom: 15px; }
-                        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-                        .items-table th, .items-table td { text-align: left; padding: 5px 0; }
-                        .items-table th { border-bottom: 1px solid #000; }
-                        .total-section { border-top: 2px solid #000; padding-top: 10px; }
-                        .total-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                        .final-total { font-weight: bold; font-size: 16px; border-top: 1px solid #000; padding-top: 5px; }
-                        .footer { text-align: center; margin-top: 20px; border-top: 1px solid #000; padding-top: 10px; }
-                        @media print { body { width: auto; } }
+                        @page { 
+                            size: 80mm auto; 
+                            margin: 5mm; 
+                        }
+                        body { 
+                            font-family: 'Courier New', monospace; 
+                            width: 80mm; 
+                            margin: 0 auto; 
+                            padding: 10px; 
+                            font-size: 12px;
+                            line-height: 1.2;
+                        }
+                        .header { 
+                            text-align: center; 
+                            margin-bottom: 15px; 
+                            border-bottom: 2px dashed #000; 
+                            padding-bottom: 10px; 
+                        }
+                        .company-name { 
+                            font-size: 16px; 
+                            font-weight: bold; 
+                            margin-bottom: 5px;
+                        }
+                        .company-address { 
+                            font-size: 10px; 
+                            margin-bottom: 5px;
+                        }
+                        .receipt-info { 
+                            margin-bottom: 15px; 
+                            font-size: 11px;
+                        }
+                        .receipt-info div { 
+                            margin-bottom: 3px;
+                        }
+                        .items-table { 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-bottom: 15px; 
+                            font-size: 10px;
+                        }
+                        .items-table th, .items-table td { 
+                            text-align: left; 
+                            padding: 3px 0;
+                            vertical-align: top;
+                        }
+                        .items-table th { 
+                            border-bottom: 1px solid #000; 
+                            font-weight: bold;
+                            font-size: 9px;
+                        }
+                        .item-name { 
+                            max-width: 45mm;
+                            word-wrap: break-word;
+                        }
+                        .item-qty { 
+                            text-align: center;
+                            width: 10mm;
+                        }
+                        .item-price { 
+                            text-align: right;
+                            width: 15mm;
+                        }
+                        .item-total { 
+                            text-align: right;
+                            width: 15mm;
+                            font-weight: bold;
+                        }
+                        .total-section { 
+                            border-top: 2px solid #000; 
+                            padding-top: 10px;
+                            margin-top: 10px;
+                        }
+                        .total-line { 
+                            display: flex; 
+                            justify-content: space-between; 
+                            margin-bottom: 5px;
+                            font-size: 11px;
+                        }
+                        .final-total { 
+                            font-weight: bold; 
+                            font-size: 14px; 
+                            border-top: 1px solid #000; 
+                            padding-top: 5px;
+                            margin-top: 8px;
+                        }
+                        .payment-info {
+                            margin-top: 10px;
+                            font-size: 10px;
+                            border-top: 1px dashed #000;
+                            padding-top: 8px;
+                        }
+                        .barcode-section {
+                            text-align: center;
+                            margin: 15px 0;
+                            padding: 10px;
+                            border: 1px dashed #000;
+                        }
+                        .barcode-image {
+                            max-width: 60mm;
+                            height: 20mm;
+                            margin: 5px auto;
+                        }
+                        .barcode-text {
+                            font-size: 12px;
+                            font-weight: bold;
+                            margin: 5px 0;
+                        }
+                        .barcode-instructions {
+                            font-size: 8px;
+                            color: #666;
+                            margin-top: 5px;
+                        }
+                        .footer { 
+                            text-align: center; 
+                            margin-top: 15px; 
+                            border-top: 1px dashed #000; 
+                            padding-top: 10px; 
+                            font-size: 10px;
+                        }
+                        @media print { 
+                            body { width: auto; margin: 0; }
+                            .no-print { display: none; }
+                            .barcode-instructions { display: none; }
+                        }
                     </style>
                 </head>
                 <body>
                     <div class="header">
-                        <div class="company-name">IBS MOBILE SHOP</div>
-                        <div>Mobile & Electronics Store</div>
+                        <div class="company-name">📱 IBS MOBILE SHOP</div>
+                        <div class="company-address">Mobile & Electronics Store</div>
+                        <div class="company-address">📍 Egypt - Cairo</div>
+                        <div class="company-address">📞 +20 123 456 7890</div>
                     </div>
                     
                     <div class="receipt-info">
-                        <div><strong>Receipt #:</strong> ${receiptData.receipt_number}</div>
-                        <div><strong>Date:</strong> ${new Date(receiptData.sale_date).toLocaleString()}</div>
-                        <div><strong>Staff:</strong> ${receiptData.staff_name}</div>
-                        <div><strong>Customer:</strong> ${receiptData.customer_name || 'Walk-in Customer'}</div>
+                        <div><strong>🧾 RECEIPT #:</strong> ${receiptNumber}</div>
+                        <div><strong>📅 DATE:</strong> ${currentDate}</div>
+                        <div><strong>👤 STAFF:</strong> ${receiptData.staff_name || 'N/A'}</div>
+                        <div><strong>🧑 CUSTOMER:</strong> ${receiptData.customer_name || 'Walk-in Customer'}</div>
+                        <div><strong>💳 PAYMENT:</strong> ${receiptData.payment_method || 'Cash'}</div>
                     </div>
                     
                     <table class="items-table">
                         <thead>
                             <tr>
-                                <th>Item</th>
-                                <th>Qty</th>
-                                <th>Price</th>
-                                <th>Total</th>
+                                <th class="item-name">ITEM</th>
+                                <th class="item-qty">QTY</th>
+                                <th class="item-price">PRICE</th>
+                                <th class="item-total">TOTAL</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${receiptData.items.map(item => `
+                            ${receiptData.items.map((item, index) => `
                                 <tr>
-                                    <td>${item.product_brand} ${item.product_model}</td>
-                                    <td>${item.quantity}</td>
-                                    <td>${item.unit_price.toFixed(2)} EGP </td>
-                                    <td>${item.total_price.toFixed(2)} EGP </td>
+                                    <td class="item-name">
+                                        <strong>${item.product_brand} ${item.product_model}</strong><br>
+                                        <small style="color: #666;">${item.product_code || item.code || ''}</small>
+                                    </td>
+                                    <td class="item-qty">${item.quantity}</td>
+                                    <td class="item-price">${item.unit_price.toFixed(2)}</td>
+                                    <td class="item-total">${item.total_price.toFixed(2)}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
                     
                     <div class="total-section">
+                        <div class="total-line">
+                            <span>SUBTOTAL:</span>
+                            <span>${receiptData.total_amount.toFixed(2)} EGP</span>
+                        </div>
+                        <div class="total-line">
+                            <span>TAX (0%):</span>
+                            <span>0.00 EGP</span>
+                        </div>
                         <div class="total-line final-total">
-                            <span>TOTAL:</span>
-                            <span>${receiptData.total_amount.toFixed(2)} EGP </span>
+                            <span>💰 TOTAL AMOUNT:</span>
+                            <span>${receiptData.total_amount.toFixed(2)} EGP</span>
                         </div>
                     </div>
                     
+                    <div class="payment-info">
+                        <div><strong>Payment Method:</strong> ${receiptData.payment_method || 'Cash'}</div>
+                        <div><strong>Amount Paid:</strong> ${receiptData.total_amount.toFixed(2)} EGP</div>
+                        <div><strong>Change:</strong> 0.00 EGP</div>
+                    </div>
+                    
+                    <div class="barcode-section">
+                        <div style="font-size: 10px; margin-bottom: 5px;">📱 Scan for Receipt Details</div>
+                        <img src="${barcodeUrl}" alt="Barcode" class="barcode-image" />
+                        <div class="barcode-text">ID: ${receiptId}</div>
+                        <div class="barcode-instructions">Scan this barcode with barcode scanner app to view receipt details online</div>
+                    </div>
+                    
                     <div class="footer">
-                        <div>Thank you for your business!</div>
-                        <div>Visit us again soon</div>
+                        <div>✨ Thank you for your business! ✨</div>
+                        <div>🛍️ Visit us again soon</div>
+                        <div style="margin-top: 8px; font-size: 9px;">
+                            <div>Warranty: As per manufacturer terms</div>
+                            <div>Exchange/Return: Within 7 days with receipt</div>
+                        </div>
                     </div>
                 </body>
                 </html>
@@ -3053,26 +3306,64 @@ if ($_POST) {
 
         async function loadIncome() {
             try {
+                console.log('=== LOADING INCOME DATA ===');
                 const response = await fetch('api/income.php');
+                console.log('Income API Response status:', response.status);
+                
+                if (response.status === 403) {
+                    console.warn('Access denied to income API - insufficient permissions');
+                    const tbody = document.getElementById('income-tbody');
+                    if (tbody) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: orange;">Access denied: Only Admin and Owner can view income entries</td></tr>`;
+                    }
+                    return;
+                }
+                
                 const result = await response.json();
+                console.log('Income API Response result:', result);
+                
                 if (result.success) {
-                    allIncomeEntries = result.data;
-                    displayIncome(result.data);
-                    displayIncomeStats(result.data);
+                    allIncomeEntries = result.data || [];
+                    console.log('Income data loaded successfully:', allIncomeEntries.length, 'entries');
+                    if (allIncomeEntries.length > 0) {
+                        console.log('Sample income entry:', allIncomeEntries[0]);
+                    }
+                    displayIncome(allIncomeEntries);
+                    displayIncomeStats(allIncomeEntries);
+                } else {
+                    console.error('Failed to load income entries:', result.message);
+                    const tbody = document.getElementById('income-tbody');
+                    if (tbody) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Failed to load income: ${result.message}</td></tr>`;
+                    }
                 }
             } catch (error) {
                 console.error('Error loading income entries:', error);
+                const tbody = document.getElementById('income-tbody');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Error loading income data</td></tr>`;
+                }
             }
         }
 
         function displayIncome(incomeEntries) {
             const tbody = document.getElementById('income-tbody');
+            if (!tbody) {
+                console.warn('Income tbody element not found');
+                return;
+            }
+            
+            if (!incomeEntries || incomeEntries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No income entries found</td></tr>';
+                return;
+            }
+            
             tbody.innerHTML = incomeEntries.map(entry => `
                 <tr>
                     <td>${new Date(entry.entry_date).toLocaleDateString()}</td>
-                    <td>${entry.created_by_name}</td>
-                    <td>${entry.description}</td>
-                    <td>${entry.price.toFixed(2)} EGP</td>
+                    <td>${entry.created_by_name || 'Unknown'}</td>
+                    <td>${entry.description || 'No description'}</td>
+                    <td>${(entry.price || 0).toFixed(2)} EGP</td>
                     <td>
                         <button class="btn btn-sm" onclick="editIncomeEntry(${entry.id})" style="padding: 3px 8px; font-size: 12px; margin-right: 5px;">
                             ✏️ Edit
@@ -3086,16 +3377,22 @@ if ($_POST) {
         }
 
         function displayIncomeStats(incomeEntries) {
-            const totalIncome = incomeEntries.reduce((sum, entry) => sum + entry.price, 0);
-            const thisMonthIncome = incomeEntries.filter(entry => {
+            const statsElement = document.getElementById('income-stats');
+            if (!statsElement) {
+                console.warn('Income stats element not found');
+                return;
+            }
+            
+            const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.price || 0), 0);
+            const thisMonthIncome = (incomeEntries || []).filter(entry => {
                 const entryDate = new Date(entry.entry_date);
                 const now = new Date();
                 return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
-            }).reduce((sum, entry) => sum + entry.price, 0);
+            }).reduce((sum, entry) => sum + (entry.price || 0), 0);
 
-            document.getElementById('income-stats').innerHTML = `
+            statsElement.innerHTML = `
                 <div class="stat-card">
-                    <h3>${incomeEntries.length}</h3>
+                    <h3>${(incomeEntries || []).length}</h3>
                     <p>Total Entries</p>
                 </div>
                 <div class="stat-card">
@@ -3229,26 +3526,66 @@ if ($_POST) {
 
         async function loadPayment() {
             try {
+                console.log('=== LOADING PAYMENT DATA ===');
                 const response = await fetch('api/payment.php');
+                console.log('Payment API Response status:', response.status);
+                
+                if (response.status === 403) {
+                    console.warn('Access denied to payment API - insufficient permissions');
+                    const tbody = document.getElementById('payment-tbody');
+                    if (tbody) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: orange;">Access denied: Only Admin and Owner can view payment entries</td></tr>`;
+                    }
+                    return;
+                }
+                
                 const result = await response.json();
+                console.log('Payment API Response result:', result);
+                console.log('Payment API Data type:', typeof result.data);
+                console.log('Payment API Data length:', result.data ? result.data.length : 'undefined');
+                
                 if (result.success) {
-                    allPaymentEntries = result.data;
-                    displayPayment(result.data);
-                    displayPaymentStats(result.data);
+                    allPaymentEntries = result.data || [];
+                    console.log('Payment data loaded successfully:', allPaymentEntries.length, 'entries');
+                    if (allPaymentEntries.length > 0) {
+                        console.log('Sample payment entry:', allPaymentEntries[0]);
+                    }
+                    displayPayment(allPaymentEntries);
+                    displayPaymentStats(allPaymentEntries);
+                } else {
+                    console.error('Failed to load payment entries:', result.message);
+                    const tbody = document.getElementById('payment-tbody');
+                    if (tbody) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Failed to load payments: ${result.message}</td></tr>`;
+                    }
                 }
             } catch (error) {
                 console.error('Error loading payment entries:', error);
+                const tbody = document.getElementById('payment-tbody');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Error loading payment data</td></tr>`;
+                }
             }
         }
 
         function displayPayment(paymentEntries) {
             const tbody = document.getElementById('payment-tbody');
+            if (!tbody) {
+                console.warn('Payment tbody element not found');
+                return;
+            }
+            
+            if (!paymentEntries || paymentEntries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No payment entries found</td></tr>';
+                return;
+            }
+            
             tbody.innerHTML = paymentEntries.map(entry => `
                 <tr>
                     <td>${new Date(entry.entry_date).toLocaleDateString()}</td>
-                    <td>${entry.created_by_name}</td>
-                    <td>${entry.description}</td>
-                    <td>${entry.price.toFixed(2)} EGP</td>
+                    <td>${entry.created_by_name || 'Unknown'}</td>
+                    <td>${entry.description || 'No description'}</td>
+                    <td>${(entry.price || 0).toFixed(2)} EGP</td>
                     <td>
                         <button class="btn btn-sm" onclick="editPaymentEntry(${entry.id})" style="padding: 3px 8px; font-size: 12px; margin-right: 5px;">
                             ✏️ Edit
@@ -3262,16 +3599,22 @@ if ($_POST) {
         }
 
         function displayPaymentStats(paymentEntries) {
-            const totalPayments = paymentEntries.reduce((sum, entry) => sum + entry.price, 0);
-            const thisMonthPayments = paymentEntries.filter(entry => {
+            const statsElement = document.getElementById('payment-stats');
+            if (!statsElement) {
+                console.warn('Payment stats element not found');
+                return;
+            }
+            
+            const totalPayments = (paymentEntries || []).reduce((sum, entry) => sum + (entry.price || 0), 0);
+            const thisMonthPayments = (paymentEntries || []).filter(entry => {
                 const entryDate = new Date(entry.entry_date);
                 const now = new Date();
                 return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
-            }).reduce((sum, entry) => sum + entry.price, 0);
+            }).reduce((sum, entry) => sum + (entry.price || 0), 0);
 
-            document.getElementById('payment-stats').innerHTML = `
+            statsElement.innerHTML = `
                 <div class="stat-card">
-                    <h3>${paymentEntries.length}</h3>
+                    <h3>${(paymentEntries || []).length}</h3>
                     <p>Total Entries</p>
                 </div>
                 <div class="stat-card">

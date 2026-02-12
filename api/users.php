@@ -204,22 +204,82 @@ switch($method) {
                     
                     $stmt->bindParam(1, $data->name);
                     $stmt->bindParam(2, $data->role);
-                    $stmt->bindParam(3, $data->phone);
-                    $stmt->bindParam(4, $data->email);
+                    $stmt->bindParam(3, $data->phone ?? null);
+                    $stmt->bindParam(4, $data->email ?? null);
                     $stmt->bindParam(5, $data->is_active);
                     $stmt->bindParam(6, $data->password);
                     $stmt->bindParam(7, $data->id);
-                } else {
-                    // Update all user fields except password
-                    $query = "UPDATE users SET name = ?, role = ?, phone = ?, email = ?, is_active = ? WHERE id = ?";
-                    $stmt = $db->prepare($query);
                     
-                    $stmt->bindParam(1, $data->name);
-                    $stmt->bindParam(2, $data->role);
-                    $stmt->bindParam(3, $data->phone);
-                    $stmt->bindParam(4, $data->email);
-                    $stmt->bindParam(5, $data->is_active);
-                    $stmt->bindParam(6, $data->id);
+                    error_log("DEBUG: Password update - Query: $query, Params: " . json_encode([$data->name, $data->role, $data->phone, $data->email, $data->is_active, $data->password, $data->id]));
+                } else {
+                    // Update all user fields except password - handle missing columns gracefully
+                    $update_fields = [];
+                    $update_values = [];
+                    $update_types = "";
+                    
+                    // Always update name and role
+                    $update_fields[] = "name = ?";
+                    $update_values[] = $data->name;
+                    $update_types .= "s";
+                    
+                    $update_fields[] = "role = ?";
+                    $update_values[] = $data->role;
+                    $update_types .= "s";
+                    
+                    // Conditionally update phone if column exists
+                    try {
+                        $phone_check = $db->query("DESCRIBE users");
+                        $columns = [];
+                        while ($row = $phone_check->fetch(PDO::FETCH_ASSOC)) {
+                            $columns[] = $row['Field'];
+                        }
+                        
+                        if (in_array('phone', $columns)) {
+                            $update_fields[] = "phone = ?";
+                            $update_values[] = $data->phone ?? null;
+                            $update_types .= "s";
+                        }
+                        
+                        // Conditionally update email if column exists
+                        if (in_array('email', $columns)) {
+                            $update_fields[] = "email = ?";
+                            $update_values[] = $data->email ?? null;
+                            $update_types .= "s";
+                        }
+                        
+                        // Always update is_active
+                        $update_fields[] = "is_active = ?";
+                        $update_values[] = $data->is_active;
+                        $update_types .= "s";
+                        
+                        $update_fields[] = "id = ?";
+                        $update_values[] = $data->id;
+                        $update_types .= "i";
+                        
+                        $query = "UPDATE users SET " . implode(', ', $update_fields) . " WHERE id = ?";
+                        $stmt = $db->prepare($query);
+                        
+                        error_log("DEBUG: Dynamic update - Query: $query, Fields: " . implode(', ', $update_fields) . ", Values: " . json_encode($update_values) . ", Types: $update_types");
+                        
+                        // Bind parameters dynamically - count actual parameters in query
+                        $param_index = 1;
+                        foreach ($update_values as $value) {
+                            error_log("DEBUG: Binding param $param_index with value: " . json_encode($value));
+                            $stmt->bindValue($param_index, $value);
+                            $param_index++;
+                        }
+                    } catch (Exception $e) {
+                        // Fallback: update without phone and email if columns don't exist
+                        $query = "UPDATE users SET name = ?, role = ?, is_active = ?, password = ? WHERE id = ?";
+                        $stmt = $db->prepare($query);
+                        
+                        // Only bind parameters that are actually present in the query
+                        $stmt->bindParam(1, $data->name);
+                        $stmt->bindParam(2, $data->role);
+                        $stmt->bindParam(3, $data->is_active);
+                        $stmt->bindParam(4, $data->password ?? null);
+                        $stmt->bindParam(5, $data->id);
+                    }
                 }
                 
                 if ($stmt->execute()) {

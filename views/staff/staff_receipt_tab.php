@@ -27,7 +27,7 @@
                             oninput="handleProductInput(this.value); searchProducts(this.value)"
                             onkeypress="if(event.key==='Enter') selectFirstProduct()">
                         <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #666;">
-                            <span id="scan-indicator">📷</span>
+                            <span id="scan-indicator"></span>
                         </div>
                     </div>
                     <div id="product-search-results"

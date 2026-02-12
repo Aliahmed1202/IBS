@@ -74,6 +74,7 @@ switch ($method) {
         // Check if requesting specific sale by ID
         if (isset($_GET['id'])) {
             $sale_id = (int) $_GET['id'];
+            error_log("API: Getting sale details for ID: $sale_id");
 
             // Get specific sale with details
             $query = "SELECT s.*, c.name as customer_name, u.name as staff_name
@@ -87,6 +88,7 @@ switch ($method) {
             $stmt->execute();
 
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            error_log("API: Sale query result: " . ($row ? "Found" : "Not found"));
 
             if ($row) {
                 // Get sale items
@@ -110,26 +112,27 @@ switch ($method) {
                         'total_price' => (float) ($item_row['total_price'] / 100)
                     ];
                 }
+                error_log("API: Found " . count($items) . " items for sale");
 
                 $sale = [
                     'id' => (int) $row['id'],
                     'receipt_number' => $row['receipt_number'],
                     'customer_name' => $row['customer_name'] ?? 'Walk-in Customer',
                     'staff_name' => $row['staff_name'],
-                    'subtotal' => (float) ($row['subtotal'] / 100),
-                    'tax_amount' => (float) ($row['tax_amount'] / 100),
                     'total_amount' => (float) ($row['total_amount'] / 100),
                     'payment_method' => $row['payment_method'],
                     'sale_date' => $row['sale_date'],
                     'items' => $items
                 ];
 
+                error_log("API: Successfully prepared sale data for receipt: " . $row['receipt_number']);
                 ob_clean();
                 echo json_encode([
                     'success' => true,
                     'data' => $sale
                 ]);
             } else {
+                error_log("API: Sale not found for ID: $sale_id");
                 ob_clean();
                 echo json_encode([
                     'success' => false,
@@ -175,14 +178,13 @@ switch ($method) {
                     'receipt_number' => $row['receipt_number'],
                     'customer_name' => $row['customer_name'] ?? 'Walk-in Customer',
                     'staff_name' => $row['staff_name'],
-                    'subtotal' => (float) ($row['subtotal'] / 100),
-                    'tax_amount' => (float) ($row['tax_amount'] / 100),
                     'total_amount' => (float) ($row['total_amount'] / 100),
                     'payment_method' => $row['payment_method'],
                     'sale_date' => $row['sale_date'],
                     'items' => $items
                 ];
-            }
+
+            } while ($row = $stmt->fetch(PDO::FETCH_ASSOC));
 
             ob_clean();
             echo json_encode([
@@ -269,36 +271,19 @@ switch ($method) {
                     $receipt_number = 'RCP-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
                     // Insert sale record with staff tracking
-                    $sale_query = "INSERT INTO sales (receipt_number, customer_id, staff_id, subtotal, tax_amount, total_amount, payment_method, notes, is_split_payment) 
-                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    $sale_query = "INSERT INTO sales (receipt_number, customer_id, staff_id, total_amount, payment_method, is_split_payment) 
+                              VALUES (?, ?, ?, ?, ?, ?)";
                     $sale_stmt = $db->prepare($sale_query);
-                    $notes = "Sale by: " . ($data->staff_name ?? 'Staff') . " (" . ($data->staff_username ?? 'unknown') . ")";
-                    $customer_id = $data->customer_id ?? null;
+                    $payment_method = $data->is_split_payment ? 'Split' : ($data->payment_splits[0]['method'] ?? 'Cash');
                     
-                    // Handle split payments
-                    $is_split_payment = isset($data->is_split_payment) && $data->is_split_payment ? 1 : 0;
-                    $payment_method = 'Split Payment';
-                    
-                    if (!$is_split_payment && isset($data->payment_method)) {
-                        $payment_method = $data->payment_method;
-                    } elseif (isset($data->payment_splits) && count($data->payment_splits) === 1) {
-                        $payment_method = $data->payment_splits[0]->payment_method;
-                    }
-
-                    $subtotal_cents = intval(round($data->subtotal * 100));
-                    $tax_cents = intval(round($data->tax_amount * 100));
-                    $total_cents = intval(round($data->total_amount * 100));
                     $staff_id = (int) $data->staff_id;
 
                     $sale_stmt->bindParam(1, $receipt_number);
-                    $sale_stmt->bindParam(2, $customer_id);
+                    $sale_stmt->bindParam(2, $data->customer_id);
                     $sale_stmt->bindParam(3, $staff_id);
-                    $sale_stmt->bindParam(4, $subtotal_cents);
-                    $sale_stmt->bindParam(5, $tax_cents);
-                    $sale_stmt->bindParam(6, $total_cents);
-                    $sale_stmt->bindParam(7, $payment_method);
-                    $sale_stmt->bindParam(8, $notes);
-                    $sale_stmt->bindParam(9, $is_split_payment);
+                    $sale_stmt->bindParam(4, $data->total_amount);
+                    $sale_stmt->bindParam(5, $payment_method);
+                    $sale_stmt->bindParam(6, $data->is_split_payment);
 
                     // Log the sale creation
                     error_log("Creating sale: Receipt $receipt_number by staff ID " . $data->staff_id . " (" . ($data->staff_name ?? 'Unknown') . ")");

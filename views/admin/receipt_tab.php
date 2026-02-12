@@ -10,11 +10,11 @@
                 <h3>Customer Information</h3>
                 <div class="form-group">
                     <label>Customer Name:</label>
-                    <input type="text" id="customer-name" placeholder="Enter customer name" pattern="[A-Za-z\s]+" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
+                    <input type="text" id="customer-name" placeholder="Enter customer name (optional)">
                 </div>
                 <div class="form-group">
                     <label>Customer Phone:</label>
-                    <input type="text" id="customer-phone" placeholder="Enter phone number" pattern="[0-9]+" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <input type="text" id="customer-phone" placeholder="Enter phone number (optional)">
                 </div>
 
                 <h3>Add Products</h3>
