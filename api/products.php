@@ -123,7 +123,7 @@ switch ($method) {
         $suggested_price = intval(round(floatval($data->suggested_price ?? 0) * 100));
         $stock = intval($data->stock ?? 0);
 
-        if (empty($data->brand) || empty($data->model)) {
+        if ((empty($data->brand) && empty($data->brand_id)) || empty($data->model)) {
             echo json_encode([
                 'success' => false,
                 'message' => 'Brand and Model are required fields'
@@ -159,6 +159,54 @@ switch ($method) {
                 'message' => 'Stock quantity must be greater than 0'
             ]);
         } else {
+            // Handle brand data - get brand name if brand_id is provided
+            $brandName = null;
+            $brandId = null;
+            
+            if (!empty($data->brand_id) && is_numeric($data->brand_id)) {
+                // Get brand name from brands table
+                $brandQuery = "SELECT name FROM brands WHERE id = ? AND is_active = 1";
+                $brandStmt = $db->prepare($brandQuery);
+                $brandStmt->bindParam(1, $data->brand_id);
+                $brandStmt->execute();
+                $brandResult = $brandStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($brandResult) {
+                    $brandName = $brandResult['name'];
+                    $brandId = (int)$data->brand_id;
+                }
+            } elseif (!empty($data->brand)) {
+                // Handle legacy brand text input
+                $brandName = $data->brand;
+                
+                // Try to find existing brand by name
+                $findBrandQuery = "SELECT id FROM brands WHERE name = ? AND is_active = 1";
+                $findBrandStmt = $db->prepare($findBrandQuery);
+                $findBrandStmt->bindParam(1, $brandName);
+                $findBrandStmt->execute();
+                $findResult = $findBrandStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($findResult) {
+                    $brandId = (int)$findResult['id'];
+                } else {
+                    // Create new brand if it doesn't exist
+                    $insertBrandQuery = "INSERT INTO brands (name) VALUES (?)";
+                    $insertBrandStmt = $db->prepare($insertBrandQuery);
+                    $insertBrandStmt->bindParam(1, $brandName);
+                    if ($insertBrandStmt->execute()) {
+                        $brandId = (int)$db->lastInsertId();
+                    }
+                }
+            }
+            
+            if (empty($brandName)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Brand is required'
+                ]);
+                break;
+            }
+
             // Generate automatic product code
             $codeQuery = "SELECT MAX(CAST(SUBSTRING(code, 4) AS UNSIGNED)) as max_num FROM products WHERE code LIKE 'IBS%'";
             $codeStmt = $db->prepare($codeQuery);
@@ -175,13 +223,13 @@ switch ($method) {
             $minStock = 0;
             $categoryId = 0;
 
-            $query = "INSERT INTO products (code, barcode, brand, model, purchase_price, min_selling_price, suggested_price, stock, min_stock, category_id, description, serial_number, imei, color, supplier_id, has_imei) 
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $query = "INSERT INTO products (code, barcode, brand, model, purchase_price, min_selling_price, suggested_price, stock, min_stock, category_id, description, serial_number, imei, color, supplier_id, has_imei, brand_id) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $db->prepare($query);
             $stmt->bindParam(1, $generatedCode);
             $stmt->bindParam(2, $barcode);
-            $stmt->bindParam(3, $data->brand);
+            $stmt->bindParam(3, $brandName);
             $stmt->bindParam(4, $data->model);
             $stmt->bindParam(5, $purchase_price);
             $stmt->bindParam(6, $min_selling_price);
@@ -201,6 +249,7 @@ switch ($method) {
             $stmt->bindParam(15, $supplierId);
             $hasImei = isset($data->has_imei) ? (int)$data->has_imei : 0;
             $stmt->bindParam(16, $hasImei);
+            $stmt->bindParam(17, $brandId);
 
             if ($stmt->execute()) {
                 echo json_encode([

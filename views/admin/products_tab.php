@@ -19,8 +19,11 @@
                     </div>
                     <div class="form-group">
                         <label data-translate="inventory.brand"><span style="color: red;">*</span> Brand:</label>
-                        <input type="text" name="brand" required
+                        <select name="brand" id="brand-select" required
                             style="width: 50%; max-width: 50%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                            <option value="" data-translate="inventory.selectBrand">Select Brand</option>
+                        </select>
+                        <small style="color: #666; font-size: 12px;" data-translate="inventory.brandHelp">Choose from existing brands or type a new one</small>
                     </div>
                     <div class="form-group">
                         <label data-translate="inventory.model"><span style="color: red;">*</span> Model:</label>
@@ -119,3 +122,166 @@
         </form>
     </div>
 </div>
+
+<script>
+// Load brands when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadBrands();
+    loadSuppliers();
+    
+    // Handle form submission
+    const form = document.querySelector('form[method="POST"]');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const data = {};
+        
+        // Convert FormData to JSON object
+        for (let [key, value] of formData.entries()) {
+            if (key === 'brand') {
+                // Send as brand_id if it's a number, otherwise as brand
+                if (!isNaN(value) && value !== '__new__') {
+                    data.brand_id = parseInt(value);
+                } else if (value !== '__new__') {
+                    data.brand = value;
+                }
+            } else {
+                data[key] = value;
+            }
+        }
+        
+        // Send the product data
+        fetch('../api/products.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert('Product added successfully! Code: ' + result.code);
+                form.reset();
+                loadBrands(); // Reload brands in case a new one was added
+            } else {
+                alert('Error: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error adding product. Please try again.');
+        });
+    });
+});
+
+function loadBrands() {
+    fetch('../api/brands.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const brandSelect = document.getElementById('brand-select');
+                
+                // Clear existing options except the first one
+                while (brandSelect.children.length > 1) {
+                    brandSelect.removeChild(brandSelect.lastChild);
+                }
+                
+                // Add brand options
+                data.data.forEach(brand => {
+                    const option = document.createElement('option');
+                    option.value = brand.id;
+                    option.textContent = brand.name;
+                    brandSelect.appendChild(option);
+                });
+                
+                // Add "Add New Brand" option
+                const newBrandOption = document.createElement('option');
+                newBrandOption.value = '__new__';
+                newBrandOption.textContent = '+ Add New Brand';
+                brandSelect.appendChild(newBrandOption);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading brands:', error);
+        });
+    
+    // Handle brand selection change
+    const brandSelect = document.getElementById('brand-select');
+    brandSelect.addEventListener('change', function() {
+        if (this.value === '__new__') {
+            const newBrand = prompt('Enter new brand name:');
+            if (newBrand && newBrand.trim()) {
+                // Add new brand via API
+                addNewBrand(newBrand.trim());
+            } else {
+                // Reset to first option if cancelled
+                this.selectedIndex = 0;
+            }
+        }
+    });
+}
+
+function addNewBrand(brandName) {
+    fetch('../api/brands.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: brandName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload brands to get the updated list
+            loadBrands();
+            // Select the newly added brand after reload
+            setTimeout(() => {
+                const brandSelect = document.getElementById('brand-select');
+                brandSelect.value = data.id;
+            }, 500);
+        } else {
+            alert('Failed to add brand: ' + data.message);
+            // Reset to first option
+            const brandSelect = document.getElementById('brand-select');
+            brandSelect.selectedIndex = 0;
+        }
+    })
+    .catch(error => {
+        console.error('Error adding brand:', error);
+        alert('Error adding brand. Please try again.');
+        // Reset to first option
+        const brandSelect = document.getElementById('brand-select');
+        brandSelect.selectedIndex = 0;
+    });
+}
+
+function loadSuppliers() {
+    fetch('../api/suppliers.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const supplierSelect = document.getElementById('supplier-select');
+                
+                // Clear existing options except the first one
+                while (supplierSelect.children.length > 1) {
+                    supplierSelect.removeChild(supplierSelect.lastChild);
+                }
+                
+                // Add supplier options
+                data.data.forEach(supplier => {
+                    const option = document.createElement('option');
+                    option.value = supplier.id;
+                    option.textContent = supplier.name;
+                    supplierSelect.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading suppliers:', error);
+        });
+}
+</script>

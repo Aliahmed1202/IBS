@@ -380,34 +380,14 @@ if (isset($_SESSION['user_id'])) {
                 login: "تسجيل الدخول",
                 usernamePlaceholder: "أدخل اسم المستخدم",
                 passwordPlaceholder: "أدخل كلمة المرور"
-            },
-            fr: {
-                title: "IBS - Système de Gestion d'Inventaire",
-                subtitle: "Veuillez vous connecter pour continuer",
-                username: "Nom d'utilisateur:",
-                password: "Mot de passe:",
-                login: "Connexion",
-                usernamePlaceholder: "Entrez le nom d'utilisateur",
-                passwordPlaceholder: "Entrez le mot de passe"
-            },
-            es: {
-                title: "IBS - Sistema de Gestión de Inventario",
-                subtitle: "Por favor inicie sesión para continuar",
-                username: "Nombre de usuario:",
-                password: "Contraseña:",
-                login: "Iniciar sesión",
-                usernamePlaceholder: "Ingrese el nombre de usuario",
-                passwordPlaceholder: "Ingrese la contraseña"
             }
         };
         
         // Language cycling
-        const languages = ['en', 'ar', 'fr', 'es'];
+        const languages = ['en', 'ar'];
         const langCodes = {
             'en': 'EN',
-            'ar': 'AR',
-            'fr': 'FR',
-            'es': 'ES'
+            'ar': 'AR'
         };
         
         let currentLangIndex = 0;
