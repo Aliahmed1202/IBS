@@ -294,7 +294,7 @@ if ($_POST) {
         <button class="nav-tab" onclick="console.log('Products tab clicked'); showTab('products')" data-translate="inventory.addProduct">📦 Add Product</button>
         <button class="nav-tab" onclick="console.log('Inventory tab clicked'); showTab('inventory')" data-translate="navigation.inventory">📋 Inventory</button>
         <button class="nav-tab" onclick="console.log('Sales tab clicked'); showTab('sales')" data-translate="navigation.sales">💰 Sales</button>
-        <button class="nav-tab" onclick="console.log('Customers tab clicked'); showTab('customers')" data-translate="navigation.customers">👥 Customers</button>
+        <button class="nav-tab" onclick="console.log('Customers tab clicked'); showTab('customers')" data-translate="navigation.customers" style="background: #ff6b6b; color: white;">👥 CUSTOMERS</button>
         <button class="nav-tab" onclick="console.log('Reports tab clicked'); showTab('reports')" data-translate="navigation.reports">📊 Reports</button>
         <button class="nav-tab" onclick="console.log('Staff tab clicked'); showTab('staff')" data-translate="navigation.staff">👥 Staff</button>
         <button class="nav-tab" onclick="console.log('Income tab clicked'); showTab('income')" data-translate="navigation.income">💰 Income</button>
