@@ -219,50 +219,6 @@ if ($_POST) {
         .fa-camera::before { content: "📷"; }
     </style>
     <script src="components/js/translations.js?v=<?php echo time(); ?>"></script>
-    <script>
-        // Immediate test script to ensure JavaScript is working
-        console.log('=== SCRIPT START ===');
-        window.showTab = function(tabName) {
-            console.log('showTab called with:', tabName);
-            
-            // Hide all tab contents
-            const allTabContents = document.querySelectorAll('.tab-content');
-            allTabContents.forEach(tab => {
-                tab.classList.remove('active');
-                tab.style.display = 'none';
-            });
-            
-            // Remove active class from all nav tabs
-            const allNavTabs = document.querySelectorAll('.nav-tab');
-            allNavTabs.forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show the selected tab content
-            const targetTabContent = document.getElementById(tabName);
-            if (targetTabContent) {
-                targetTabContent.classList.add('active');
-                targetTabContent.style.display = 'block';
-                console.log('Tab content found and activated:', tabName);
-            } else {
-                console.error('Tab content not found:', tabName);
-            }
-            
-            // Activate the corresponding nav tab
-            const targetNavTab = Array.from(allNavTabs).find(tab => {
-                const onclick = tab.getAttribute('onclick');
-                return onclick && onclick.includes("'" + tabName + "'");
-            });
-            
-            if (targetNavTab) {
-                targetNavTab.classList.add('active');
-                console.log('Nav tab activated:', targetNavTab.textContent);
-            } else {
-                console.error('Nav tab not found for:', tabName);
-            }
-        };
-        console.log('showTab immediately defined:', typeof window.showTab);
-    </script>
 </head>
 
 <body id="body-lang">
@@ -294,7 +250,7 @@ if ($_POST) {
         <button class="nav-tab" onclick="console.log('Products tab clicked'); showTab('products')" data-translate="inventory.addProduct">📦 Add Product</button>
         <button class="nav-tab" onclick="console.log('Inventory tab clicked'); showTab('inventory')" data-translate="navigation.inventory">📋 Inventory</button>
         <button class="nav-tab" onclick="console.log('Sales tab clicked'); showTab('sales')" data-translate="navigation.sales">💰 Sales</button>
-        <button class="nav-tab" onclick="console.log('Customers tab clicked'); showTab('customers')" data-translate="navigation.customers" style="background: #ff6b6b; color: white;">👥 CUSTOMERS</button>
+        <button class="nav-tab" onclick="console.log('Customers tab clicked'); showTab('customers')" data-translate="navigation.customers">👥 CUSTOMERS</button>
         <button class="nav-tab" onclick="console.log('Reports tab clicked'); showTab('reports')" data-translate="navigation.reports">📊 Reports</button>
         <button class="nav-tab" onclick="console.log('Staff tab clicked'); showTab('staff')" data-translate="navigation.staff">👥 Staff</button>
         <button class="nav-tab" onclick="console.log('Income tab clicked'); showTab('income')" data-translate="navigation.income">💰 Income</button>
@@ -770,6 +726,14 @@ if ($_POST) {
                 targetTabContent.classList.add('active');
                 targetTabContent.style.display = 'block';
                 console.log('Tab content found and activated:', tabName);
+                
+                // Trigger customer data loading if customers tab is activated
+                if (tabName === 'customers' && typeof loadCustomers === 'function') {
+                    setTimeout(() => {
+                        console.log('Triggering customer data load...');
+                        loadCustomers();
+                    }, 200);
+                }
             } else {
                 console.error('Tab content not found:', tabName);
             }

@@ -6,40 +6,6 @@
     <div class="section">
         <h2 data-translate="customers.title">👥 Customer Management</h2>
         
-        <!-- Add Customer Form -->
-        <div class="subsection">
-            <h3 data-translate="customers.addNew">➕ Add New Customer</h3>
-            <form id="addCustomerForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div>
-                    <div class="form-group">
-                        <label data-translate="customers.name"><span style="color: red;">*</span> Name:</label>
-                        <input type="text" name="name" id="customerName" required
-                            style="width: 80%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                    </div>
-                    <div class="form-group">
-                        <label data-translate="customers.phone">Phone:</label>
-                        <input type="tel" name="phone" id="customerPhone"
-                            style="width: 80%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                    </div>
-                </div>
-                <div>
-                    <div class="form-group">
-                        <label data-translate="customers.email">Email:</label>
-                        <input type="email" name="email" id="customerEmail"
-                            style="width: 80%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                    </div>
-                    <div class="form-group">
-                        <label data-translate="customers.address">Address:</label>
-                        <textarea name="address" id="customerAddress" rows="2"
-                            style="width: 80%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; resize: vertical;"></textarea>
-                    </div>
-                </div>
-                <div style="grid-column: 1 / -1;">
-                    <button type="submit" class="btn" data-translate="customers.addCustomer">Add Customer</button>
-                </div>
-            </form>
-        </div>
-
         <!-- Search and Filter -->
         <div class="subsection">
             <h3 data-translate="customers.search">🔍 Search Customers</h3>
@@ -241,10 +207,8 @@ document.addEventListener('DOMContentLoaded', function() {
         customersTab.addEventListener('click', function() {
             console.log('Customers tab clicked');
             setTimeout(() => {
-                if (!customersLoaded) {
-                    loadCustomers();
-                    customersLoaded = true;
-                }
+                loadCustomers();
+                customersLoaded = true;
             }, 100);
         });
     } else {
@@ -252,15 +216,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Try alternative selector
         const allTabs = document.querySelectorAll('.nav-tab');
         allTabs.forEach(tab => {
-            if (tab.textContent.includes('Customers') || tab.getAttribute('data-translate') === 'navigation.customers') {
+            if (tab.textContent.includes('Customers') || tab.textContent.includes('CUSTOMERS') || tab.getAttribute('data-translate') === 'navigation.customers') {
                 console.log('Found customers tab with alternative method:', tab);
                 tab.addEventListener('click', function() {
                     console.log('Customers tab clicked (alternative method)');
                     setTimeout(() => {
-                        if (!customersLoaded) {
-                            loadCustomers();
-                            customersLoaded = true;
-                        }
+                        loadCustomers();
+                        customersLoaded = true;
                     }, 100);
                 });
             }
@@ -301,11 +263,20 @@ document.addEventListener('DOMContentLoaded', function() {
         loadCustomers();
         customersLoaded = true;
     }
+    
+    // Also load customers after a short delay to ensure everything is ready
+    setTimeout(() => {
+        const customersTabContent = document.getElementById('customers');
+        if (customersTabContent && customersTabContent.classList.contains('active')) {
+            loadCustomers();
+            customersLoaded = true;
+        }
+    }, 500);
 });
 
 function loadCustomers() {
     console.log('Loading customers...');
-    fetch('../api/customers.php')
+    fetch('api/customers.php')
         .then(response => response.json())
         .then(data => {
             console.log('Customers API response:', data);
@@ -339,7 +310,7 @@ function displayCustomers(customers) {
             <td style="padding: 12px; font-weight: bold;">${customer.name}</td>
             <td style="padding: 12px;">${customer.phone || '-'}</td>
             <td style="padding: 12px;">${customer.email || '-'}</td>
-            <td style="padding: 12px;">${customer.total_purchases.toFixed(2)}</td>
+            <td style="padding: 12px;">${parseFloat(customer.total_purchases).toFixed(2)}</td>
             <td style="padding: 12px;">${new Date(customer.created_at).toLocaleDateString()}</td>
             <td style="padding: 12px; text-align: center;">
                 <button class="btn-edit" onclick="editCustomer(${customer.id})" data-translate="common.edit">Edit</button>
@@ -357,7 +328,7 @@ function addCustomer() {
         data[key] = value.trim() || null;
     }
     
-    fetch('../api/customers.php', {
+    fetch('api/customers.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -367,9 +338,18 @@ function addCustomer() {
     .then(response => response.json())
     .then(result => {
         if (result.success) {
-            alert('Customer added successfully!');
+            if (result.action === 'use_existing') {
+                alert(`Using existing customer: ${result.customer_name}\nCustomer ID: ${result.customer_id}`);
+                // Here you can trigger receipt creation with existing customer
+                // For example: createReceiptWithCustomer(result.customer_id, result.customer_name);
+            } else if (result.action === 'new_customer') {
+                alert(`New customer added successfully!\nCustomer: ${result.customer_name}\nCustomer ID: ${result.customer_id}`);
+                // Here you can trigger receipt creation with new customer
+                // For example: createReceiptWithCustomer(result.customer_id, result.customer_name);
+            }
+            
             document.getElementById('addCustomerForm').reset();
-            loadCustomers();
+            loadCustomers(); // Refresh the customer list
         } else {
             alert('Error: ' + result.message);
         }
@@ -406,7 +386,7 @@ function updateCustomer() {
         data[key] = value.trim() || null;
     }
     
-    fetch(`../api/customers.php?id=${data.id}`, {
+    fetch(`api/customers.php?id=${data.id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -434,7 +414,7 @@ function deleteCustomer(id) {
         return;
     }
     
-    fetch(`../api/customers.php?id=${id}`, {
+    fetch(`api/customers.php?id=${id}`, {
         method: 'DELETE'
     })
     .then(response => response.json())
