@@ -19,7 +19,7 @@ const translations = {
             error: "اسم المستخدم أو كلمة المرور غير صحيحة"
         }
     },
-    
+
     // Dashboard Navigation
     navigation: {
         en: {
@@ -32,7 +32,8 @@ const translations = {
             payment: "Payment",
             logout: "Logout",
             welcome: "Welcome",
-            receipt: "Receipt"
+            receipt: "Receipt",
+            customers: "Customers"
         },
         ar: {
             dashboard: "لوحة التحكم",
@@ -44,10 +45,11 @@ const translations = {
             payment: "المدفوعات",
             logout: "تسجيل الخروج",
             welcome: "مرحباً",
-            receipt: "الإيصال"
+            receipt: "الإيصال",
+            customers: "العملاء"
         }
     },
-    
+
     // Inventory Management
     inventory: {
         en: {
@@ -169,7 +171,7 @@ const translations = {
             productDeleted: "تم حذف المنتج بنجاح!"
         }
     },
-    
+
     // Sales Management
     sales: {
         en: {
@@ -259,7 +261,7 @@ const translations = {
             close: "إغلاق"
         }
     },
-    
+
     // Reports Management
     reports: {
         en: {
@@ -317,7 +319,7 @@ const translations = {
             lowStock: "عناصر المخزون المنخفض"
         }
     },
-    
+
     // Staff Management
 
     staff: {
@@ -372,7 +374,7 @@ const translations = {
             confirmDelete: "هل أنت متأكد من حذف هذا الموظف؟"
         }
     },
-    
+
     // Income Management
     income: {
         en: {
@@ -412,7 +414,7 @@ const translations = {
             confirmDelete: "هل أنت متأكد من حذف دخلة الدخل هذه؟"
         }
     },
-    
+
     // Payment Management
     payment: {
         en: {
@@ -450,7 +452,51 @@ const translations = {
             confirmDelete: "هل أنت متأكد من حذف هذه الدفعة؟"
         }
     },
-    
+
+    // Customers Management
+    customers: {
+        en: {
+            title: "Customer Tab",
+            search: "Search Customers",
+            list: "Customer List",
+            id: "ID",
+            name: "Name",
+            phone: "Phone",
+            email: "Email",
+            totalPurchases: "Total Purchases",
+            searchPlaceholder: "Search by name, phone, or email...",
+            noCustomersFound: "No customers found matching your search",
+            editCustomer: "Edit Customer",
+            address: "Address",
+            updateCustomer: "Update Customer",
+            updatedSuccess: "Customer updated successfully!",
+            deletedSuccess: "Customer deleted successfully!",
+            deleteConfirm: "Are you sure you want to delete this customer?",
+            errorUpdating: "Error updating customer. Please try again.",
+            errorDeleting: "Error deleting customer. Please try again."
+        },
+        ar: {
+            title: "علامة تبويب العملاء",
+            search: "البحث عن العملاء",
+            list: "قائمة العملاء",
+            id: "المعرف",
+            name: "الاسم",
+            phone: "الهاتف",
+            email: "البريد الإلكتروني",
+            totalPurchases: "إجمالي المشتريات",
+            searchPlaceholder: "بحث بالاسم، الهاتف، أو البريد...",
+            noCustomersFound: "لم يتم العثور على عملاء مطابقين لبحثك",
+            editCustomer: "تعديل العميل",
+            address: "العنوان",
+            updateCustomer: "تحديث العميل",
+            updatedSuccess: "تم تحديث العميل بنجاح!",
+            deletedSuccess: "تم حذف العميل بنجاح!",
+            deleteConfirm: "هل أنت متأكد من حذف هذا العميل؟",
+            errorUpdating: "خطأ أثناء تحديث العميل. يرجى المحاولة مرة أخرى.",
+            errorDeleting: "خطأ أثناء حذف العميل. يرجى المحاولة مرة أخرى."
+        }
+    },
+
     // Common Messages
     common: {
         en: {
@@ -470,6 +516,7 @@ const translations = {
             edit: "Edit",
             add: "Add",
             search: "Search",
+            reset: "Reset",
             filter: "Filter",
             clear: "Clear",
             refresh: "Refresh",
@@ -482,6 +529,8 @@ const translations = {
             of: "of",
             records: "records",
             noRecords: "No records found",
+            createdAt: "Created At",
+            actions: "Actions",
             selectOption: "Please select an option",
             requiredField: "This field is required",
             invalidEmail: "Please enter a valid email address",
@@ -508,6 +557,7 @@ const translations = {
             edit: "تعديل",
             add: "إضافة",
             search: "بحث",
+            reset: "إعادة ضبط",
             filter: "تصفية",
             clear: "مسح",
             refresh: "تحديث",
@@ -520,6 +570,8 @@ const translations = {
             of: "من",
             records: "سجلات",
             noRecords: "لا توجد سجلات",
+            createdAt: "تاريخ الإنشاء",
+            actions: "الإجراءات",
             selectOption: "الرجاء اختيار خيار",
             requiredField: "هذا الحقل مطلوب",
             invalidEmail: "الرجاء إدخال بريد إلكتروني صحيح",
@@ -538,49 +590,49 @@ class LanguageManager {
         this.currentLang = localStorage.getItem('language') || 'en';
         this.fallbackLang = 'en';
     }
-    
+
     // Get current language
     getCurrentLanguage() {
         return this.currentLang;
     }
-    
+
     // Set current language
     setLanguage(lang) {
         this.currentLang = lang;
         localStorage.setItem('language', lang);
         this.applyLanguage(lang);
     }
-    
+
     // Toggle between languages
     toggleLanguage() {
         const newLang = this.currentLang === 'en' ? 'ar' : 'en';
         this.setLanguage(newLang);
         return newLang;
     }
-    
+
     // Get translation for a specific key
     translate(category, key) {
         try {
-            if (translations[category] && 
-                translations[category][this.currentLang] && 
+            if (translations[category] &&
+                translations[category][this.currentLang] &&
                 translations[category][this.currentLang][key]) {
                 return translations[category][this.currentLang][key];
             }
-            
+
             // Fallback to English if current language doesn't have the translation
-            if (translations[category] && 
-                translations[category][this.fallbackLang] && 
+            if (translations[category] &&
+                translations[category][this.fallbackLang] &&
                 translations[category][this.fallbackLang][key]) {
                 return translations[category][this.fallbackLang][key];
             }
-            
+
             return key; // Return the key itself if no translation found
         } catch (error) {
             console.warn('Translation error:', error);
             return key;
         }
     }
-    
+
     // Apply language to the entire page
     applyLanguage(lang) {
         // Update HTML lang attribute
@@ -588,7 +640,7 @@ class LanguageManager {
         if (htmlElement) {
             htmlElement.setAttribute('lang', lang);
         }
-        
+
         // Update body direction
         const body = document.body;
         if (body) {
@@ -600,26 +652,51 @@ class LanguageManager {
                 body.classList.remove('rtl');
             }
         }
-        
+
         // Update all translatable elements
         document.querySelectorAll('[data-translate]').forEach(element => {
             const translateAttr = element.getAttribute('data-translate');
             const [category, key] = translateAttr.split('.');
-            
+
             if (category && key) {
                 const translation = this.translate(category, key);
                 if (translation) {
                     element.textContent = translation;
                 }
+
+                // Also translate placeholders if they exist
+                if (element.hasAttribute('placeholder')) {
+                    const placeholderKey = element.getAttribute('data-translate-placeholder');
+                    if (placeholderKey) {
+                        const [pCat, pKey] = placeholderKey.split('.');
+                        const pTranslation = this.translate(pCat, pKey);
+                        if (pTranslation) {
+                            element.setAttribute('placeholder', pTranslation);
+                        }
+                    }
+                }
             }
         });
-        
+
+        // Specifically handle placeholders for inputs that don't use textContent
+        document.querySelectorAll('[data-translate-placeholder]').forEach(element => {
+            const translateAttr = element.getAttribute('data-translate-placeholder');
+            const [category, key] = translateAttr.split('.');
+
+            if (category && key) {
+                const translation = this.translate(category, key);
+                if (translation) {
+                    element.setAttribute('placeholder', translation);
+                }
+            }
+        });
+
         // Update language toggle button
         const langText = document.querySelector('.lang-text');
         if (langText) {
             langText.textContent = lang.toUpperCase();
         }
-        
+
         // Update page title if available
         const titleElement = document.querySelector('title[data-translate]');
         if (titleElement) {
@@ -630,7 +707,7 @@ class LanguageManager {
             }
         }
     }
-    
+
     // Initialize language system
     init() {
         this.applyLanguage(this.currentLang);

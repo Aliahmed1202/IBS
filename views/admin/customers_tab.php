@@ -3,42 +3,59 @@
 ?>
 <!-- Customers Management Tab -->
 <div id="customers" class="tab-content">
-    <div class="section">
-        <h2 data-translate="customers.title">👥 Customer Management</h2>
+    <div class="section dashboard-section">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h2 data-translate="customers.title" style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                <span class="section-icon">👥</span> Customer Tab
+            </h2>
+            <div class="stats-badge" style="background: var(--gradient-primary); color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 5px;">
+                <span id="customerCount">0</span> <span data-translate="navigation.customers">Customers</span>
+            </div>
+        </div>
         
         <!-- Search and Filter -->
-        <div class="subsection">
-            <h3 data-translate="customers.search">🔍 Search Customers</h3>
-            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-                <input type="text" id="customerSearch" placeholder="Search by name, phone, or email..."
-                    style="flex: 1; min-width: 200px; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-                <button onclick="searchCustomers()" class="btn" data-translate="common.search">Search</button>
-                <button onclick="loadCustomers()" class="btn" data-translate="common.reset">Reset</button>
+        <div class="filter-container glassy-card" style="margin-bottom: 30px; padding: 25px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid rgba(255,255,255,0.5); box-shadow: var(--shadow-sm);">
+            <h3 data-translate="customers.search" style="margin-top: 0; margin-bottom: 20px; font-size: 1.1em; color: var(--gray-700); display: flex; align-items: center; gap: 8px;">
+                🔍 Search Customers
+            </h3>
+            <div class="search-flex-row" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                <div class="search-input-wrapper" style="flex: 1; min-width: 300px; position: relative;">
+                    <input type="text" id="customerSearch" data-translate-placeholder="customers.searchPlaceholder" placeholder="Search by name, phone, or email..."
+                        style="width: 100%; padding: 12px 15px 12px 45px; border: 2px solid var(--gray-200); border-radius: 12px; font-size: 16px; transition: var(--transition-normal); background: white;">
+                    <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 18px;">🔍</span>
+                </div>
+                <div class="button-group" style="display: flex; gap: 10px;">
+                    <button onclick="searchCustomers()" class="btn btn-primary" style="margin: 0;" data-translate="common.search">Search</button>
+                    <button onclick="loadCustomers()" class="btn btn-secondary" style="margin: 0; background: var(--gray-200); color: var(--gray-700);" data-translate="common.reset">Reset</button>
+                </div>
             </div>
         </div>
 
         <!-- Customers Table -->
-        <div class="subsection">
-            <h3 data-translate="customers.list">📋 Customer List</h3>
-            <div style="overflow-x: auto;">
-                <table id="customersTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
-                    <thead style="background: #f8f9fa;">
-                        <tr>
-                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;" data-translate="customers.id">ID</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;" data-translate="customers.name">Name</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;" data-translate="customers.phone">Phone</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;" data-translate="customers.email">Email</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;" data-translate="customers.totalPurchases">Total Purchases</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;" data-translate="common.createdAt">Created</th>
-                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;" data-translate="common.actions">Actions</th>
+        <div class="table-card glassy-card" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-md); border: 1px solid var(--gray-100);">
+            <div class="card-header" style="padding: 20px 25px; border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; background: var(--gray-50);">
+                <h3 data-translate="customers.list" style="margin: 0; font-size: 1.1em; font-weight: 700;">📋 Customer List</h3>
+            </div>
+            <div class="table-responsive" style="overflow-x: auto;">
+                <table id="customersTable" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                    <thead>
+                        <tr style="background: var(--gray-50);">
+                            <th style="padding: 15px 25px; text-align: left; border-bottom: 2px solid var(--gray-100); color: var(--gray-600); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;" data-translate="customers.id">ID</th>
+                            <th style="padding: 15px 25px; text-align: left; border-bottom: 2px solid var(--gray-100); color: var(--gray-600); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;" data-translate="customers.name">Name</th>
+                            <th style="padding: 15px 25px; text-align: left; border-bottom: 2px solid var(--gray-100); color: var(--gray-600); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;" data-translate="customers.phone">Phone</th>
+                            <th style="padding: 15px 25px; text-align: left; border-bottom: 2px solid var(--gray-100); color: var(--gray-600); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;" data-translate="customers.email">Email</th>
+                            <th style="padding: 15px 25px; text-align: left; border-bottom: 2px solid var(--gray-100); color: var(--gray-600); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;" data-translate="customers.totalPurchases">Total Purchases</th>
+                            <th style="padding: 15px 25px; text-align: left; border-bottom: 2px solid var(--gray-100); color: var(--gray-600); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;" data-translate="common.createdAt">Created</th>
+                            <th style="padding: 15px 25px; text-align: center; border-bottom: 2px solid var(--gray-100); color: var(--gray-600); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;" data-translate="common.actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="customersTableBody">
                         <!-- Customers will be loaded here -->
                     </tbody>
                 </table>
-                <div id="noCustomersFound" style="text-align: center; padding: 40px; color: #666; display: none;">
-                    <p data-translate="customers.noCustomersFound">No customers found</p>
+                <div id="noCustomersFound" style="text-align: center; padding: 60px 40px; color: var(--gray-400); display: none;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">🔍</div>
+                    <p data-translate="customers.noCustomersFound" style="font-size: 18px; font-weight: 500;">No customers found matching your search</p>
                 </div>
             </div>
         </div>
@@ -46,148 +63,118 @@
 </div>
 
 <!-- Edit Customer Modal -->
-<div id="editCustomerModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header">
-            <h3 data-translate="customers.editCustomer">Edit Customer</h3>
-            <span class="close" onclick="closeEditCustomerModal()">&times;</span>
+<div id="editCustomerModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px);">
+    <div class="modal-content" style="background-color: white; margin: 5% auto; padding: 0; border-radius: 20px; width: 90%; max-width: 550px; box-shadow: var(--shadow-xl); overflow: hidden; animation: modalSlideIn 0.3s ease-out;">
+        <div class="modal-header" style="background: var(--gradient-primary); color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 data-translate="customers.editCustomer" style="margin: 0; font-size: 1.5em; display: flex; align-items: center; gap: 10px;">
+                <span>✏️</span> Edit Customer
+            </h3>
+            <span class="close" onclick="closeEditCustomerModal()" style="color: white; font-size: 28px; font-weight: bold; cursor: pointer; opacity: 0.8; transition: 0.2s;">&times;</span>
         </div>
-        <form id="editCustomerForm">
-            <input type="hidden" id="editCustomerId" name="id">
-            <div class="form-group">
-                <label data-translate="customers.name"><span style="color: red;">*</span> Name:</label>
-                <input type="text" name="name" id="editCustomerName" required
-                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-            </div>
-            <div class="form-group">
-                <label data-translate="customers.phone">Phone:</label>
-                <input type="tel" name="phone" id="editCustomerPhone"
-                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-            </div>
-            <div class="form-group">
-                <label data-translate="customers.email">Email:</label>
-                <input type="email" name="email" id="editCustomerEmail"
-                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-            </div>
-            <div class="form-group">
-                <label data-translate="customers.address">Address:</label>
-                <textarea name="address" id="editCustomerAddress" rows="3"
-                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; resize: vertical;"></textarea>
-            </div>
-            <div class="form-group">
-                <label data-translate="customers.totalPurchases">Total Purchases:</label>
-                <input type="number" name="total_purchases" id="editCustomerTotalPurchases" step="0.01" min="0"
-                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-                <button type="button" onclick="closeEditCustomerModal()" class="btn" style="background: #6c757d;" data-translate="common.cancel">Cancel</button>
-                <button type="submit" class="btn" data-translate="customers.updateCustomer">Update Customer</button>
-            </div>
-        </form>
+        <div style="padding: 30px;">
+            <form id="editCustomerForm">
+                <input type="hidden" id="editCustomerId" name="id">
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--gray-700);"><span data-translate="customers.name">Name</span> <span style="color: var(--primary-red);">*</span></label>
+                        <input type="text" name="name" id="editCustomerName" required
+                            style="width: 100%; max-width: 100%; padding: 12px 15px; border: 2px solid var(--gray-200); border-radius: 10px; font-size: 16px; transition: var(--transition-normal);">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label data-translate="customers.phone" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--gray-700);">Phone</label>
+                            <input type="tel" name="phone" id="editCustomerPhone"
+                                style="width: 100%; max-width: 100%; padding: 12px 15px; border: 2px solid var(--gray-200); border-radius: 10px; font-size: 16px; transition: var(--transition-normal);">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label data-translate="customers.email" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--gray-700);">Email</label>
+                            <input type="email" name="email" id="editCustomerEmail"
+                                style="width: 100%; max-width: 100%; padding: 12px 15px; border: 2px solid var(--gray-200); border-radius: 10px; font-size: 16px; transition: var(--transition-normal);">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label data-translate="customers.address" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--gray-700);">Address</label>
+                        <textarea name="address" id="editCustomerAddress" rows="3"
+                            style="width: 100%; max-width: 100%; padding: 12px 15px; border: 2px solid var(--gray-200); border-radius: 10px; font-size: 16px; resize: vertical; transition: var(--transition-normal);"></textarea>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label data-translate="customers.totalPurchases" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--gray-700);">Total Purchases</label>
+                        <input type="number" name="total_purchases" id="editCustomerTotalPurchases" step="0.01" min="0"
+                            style="width: 100%; max-width: 100%; padding: 12px 15px; border: 2px solid var(--gray-200); border-radius: 10px; font-size: 16px; transition: var(--transition-normal);">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 35px; padding-top: 20px; border-top: 1px solid var(--gray-100);">
+                    <button type="button" onclick="closeEditCustomerModal()" class="btn" style="background: var(--gray-200); color: var(--gray-700); margin: 0; box-shadow: none;" data-translate="common.cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="margin: 0;" data-translate="customers.updateCustomer">Update Customer</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <style>
-.modal {
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
+#customers input:focus, #customers textarea:focus {
+    outline: none;
+    border-color: var(--primary-blue) !important;
+    box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.1) !important;
 }
 
-.modal-content {
-    background-color: #fefefe;
-    margin: 5% auto;
-    padding: 20px;
+#customers tr:hover {
+    background-color: var(--gray-50);
+}
+
+.action-btn {
+    padding: 8px 12px;
     border-radius: 8px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #ddd;
-}
-
-.close {
-    color: #aaa;
-    font-size: 28px;
-    font-weight: bold;
+    border: none;
     cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-edit-cust {
+    background: var(--light-blue);
+    color: var(--dark-blue);
+}
+
+.btn-edit-cust:hover {
+    background: var(--accent-blue);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-delete-cust {
+    background: var(--light-red);
+    color: var(--dark-red);
+}
+
+.btn-delete-cust:hover {
+    background: var(--primary-red);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.glassy-card {
+    transition: var(--transition-normal);
+}
+
+.glassy-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+@keyframes modalSlideIn {
+    from { opacity: 0; transform: translateY(-50px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .close:hover {
-    color: black;
-}
-
-.btn {
-    background: #007bff;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.btn:hover {
-    background: #0056b3;
-}
-
-.btn-edit {
-    background: #28a745;
-    color: white;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-    margin-right: 5px;
-}
-
-.btn-edit:hover {
-    background: #1e7e34;
-}
-
-.btn-delete {
-    background: #dc3545;
-    color: white;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-}
-
-.btn-delete:hover {
-    background: #c82333;
-}
-
-.subsection {
-    background: white;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #333;
+    opacity: 1 !important;
+    transform: scale(1.1);
 }
 </style>
 
@@ -283,6 +270,12 @@ function loadCustomers() {
             if (data.success) {
                 allCustomers = data.data;
                 displayCustomers(allCustomers);
+                
+                // Update customer count badge
+                const countBadge = document.getElementById('customerCount');
+                if (countBadge) {
+                    countBadge.textContent = allCustomers.length;
+                }
             } else {
                 console.error('Error loading customers:', data.message);
             }
@@ -304,20 +297,43 @@ function displayCustomers(customers) {
     
     noCustomersDiv.style.display = 'none';
     
-    tbody.innerHTML = customers.map(customer => `
-        <tr style="border-bottom: 1px solid #dee2e6;">
-            <td style="padding: 12px;">${customer.id}</td>
-            <td style="padding: 12px; font-weight: bold;">${customer.name}</td>
-            <td style="padding: 12px;">${customer.phone || '-'}</td>
-            <td style="padding: 12px;">${customer.email || '-'}</td>
-            <td style="padding: 12px;">${parseFloat(customer.total_purchases).toFixed(2)}</td>
-            <td style="padding: 12px;">${new Date(customer.created_at).toLocaleDateString()}</td>
-            <td style="padding: 12px; text-align: center;">
-                <button class="btn-edit" onclick="editCustomer(${customer.id})" data-translate="common.edit">Edit</button>
-                <button class="btn-delete" onclick="deleteCustomer(${customer.id})" data-translate="common.delete">Delete</button>
+    tbody.innerHTML = customers.map(customer => {
+        const editLabel = typeof langManager !== 'undefined' ? langManager.translate('common', 'edit') : 'Edit';
+        const deleteLabel = typeof langManager !== 'undefined' ? langManager.translate('common', 'delete') : 'Delete';
+        const phoneLabel = customer.phone || (typeof langManager !== 'undefined' ? langManager.translate('common', 'noRecords') : 'No records');
+
+        return `
+        <tr style="border-bottom: 1px solid var(--gray-100); transition: var(--transition-normal);">
+            <td style="padding: 15px 25px; font-weight: 500; color: var(--gray-600);">${customer.id}</td>
+            <td style="padding: 15px 25px;">
+                <div style="font-weight: 700; color: var(--gray-900);">${customer.name}</div>
+                <div style="font-size: 12px; color: var(--gray-500);">${phoneLabel}</div>
+            </td>
+            <td style="padding: 15px 25px; color: var(--gray-700);">${customer.phone || '-'}</td>
+            <td style="padding: 15px 25px; color: var(--gray-700);">${customer.email || '-'}</td>
+            <td style="padding: 15px 25px;">
+                <span style="background: var(--light-green); color: var(--dark-green); padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 14px;">
+                    ${parseFloat(customer.total_purchases || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </span>
+            </td>
+            <td style="padding: 15px 25px; color: var(--gray-500); font-size: 13px;">${new Date(customer.created_at).toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'})}</td>
+            <td style="padding: 15px 25px; text-align: center;">
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                    <button class="action-btn btn-edit-cust" onclick="editCustomer(${customer.id})" data-translate="common.edit">
+                        <span>✏️</span> ${editLabel}
+                    </button>
+                    <button class="action-btn btn-delete-cust" onclick="deleteCustomer(${customer.id})" data-translate="common.delete">
+                        <span>🗑️</span> ${deleteLabel}
+                    </button>
+                </div>
             </td>
         </tr>
-    `).join('');
+    `;}).join('');
+    
+    // Re-apply translations for data-translate attributes in the newly added rows
+    if (typeof langManager !== 'undefined') {
+        langManager.applyLanguage(langManager.getCurrentLanguage());
+    }
 }
 
 function addCustomer() {
@@ -396,7 +412,8 @@ function updateCustomer() {
     .then(response => response.json())
     .then(result => {
         if (result.success) {
-            alert('Customer updated successfully!');
+            const successMsg = typeof langManager !== 'undefined' ? langManager.translate('customers', 'updatedSuccess') : 'Customer updated successfully!';
+            alert(successMsg);
             closeEditCustomerModal();
             loadCustomers();
         } else {
@@ -405,12 +422,14 @@ function updateCustomer() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error updating customer. Please try again.');
+        const errorMsg = typeof langManager !== 'undefined' ? langManager.translate('customers', 'errorUpdating') : 'Error updating customer. Please try again.';
+        alert(errorMsg);
     });
 }
 
 function deleteCustomer(id) {
-    if (!confirm('Are you sure you want to delete this customer?')) {
+    const confirmMsg = typeof langManager !== 'undefined' ? langManager.translate('customers', 'deleteConfirm') : 'Are you sure you want to delete this customer?';
+    if (!confirm(confirmMsg)) {
         return;
     }
     
@@ -420,7 +439,8 @@ function deleteCustomer(id) {
     .then(response => response.json())
     .then(result => {
         if (result.success) {
-            alert('Customer deleted successfully!');
+            const successMsg = typeof langManager !== 'undefined' ? langManager.translate('customers', 'deletedSuccess') : 'Customer deleted successfully!';
+            alert(successMsg);
             loadCustomers();
         } else {
             alert('Error: ' + result.message);
@@ -428,7 +448,8 @@ function deleteCustomer(id) {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error deleting customer. Please try again.');
+        const errorMsg = typeof langManager !== 'undefined' ? langManager.translate('customers', 'errorDeleting') : 'Error deleting customer. Please try again.';
+        alert(errorMsg);
     });
 }
 
