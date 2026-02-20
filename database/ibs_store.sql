@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Feb 09, 2026 at 12:12 AM
+-- Generation Time: Feb 20, 2026 at 05:40 PM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -21,6 +21,96 @@ SET time_zone = "+00:00";
 -- Database: `ibs_store`
 --
 
+DELIMITER $$
+--
+-- Procedures
+--
+DROP PROCEDURE IF EXISTS `GetProductStock`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetProductStock` (IN `product_id` INT)   BEGIN
+    SELECT 
+        p.id,
+        p.code,
+        p.brand,
+        p.model,
+        p.stock,
+        p.min_stock,
+        c.name as category_name,
+        b.name as branch_name,
+        CASE 
+            WHEN p.stock <= p.min_stock THEN 'Low Stock'
+            WHEN p.stock = 0 THEN 'Out of Stock'
+            ELSE 'In Stock'
+        END as stock_status
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    LEFT JOIN branches b ON p.branch_id = b.id
+    WHERE p.id = product_id;
+END$$
+
+DROP PROCEDURE IF EXISTS `GetSalesByPeriod`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetSalesByPeriod` (IN `start_date` DATE, IN `end_date` DATE)   BEGIN
+    SELECT 
+        s.id,
+        s.receipt_number,
+        c.name as customer_name,
+        u.name as staff_name,
+        b.name as branch_name,
+        s.total_amount,
+        s.payment_method,
+        s.sale_date,
+        COUNT(si.id) as item_count
+    FROM sales s
+    LEFT JOIN customers c ON s.customer_id = c.id
+    LEFT JOIN users u ON s.staff_id = u.id
+    LEFT JOIN branches b ON s.branch_id = b.id
+    LEFT JOIN sale_items si ON s.id = si.sale_id
+    WHERE DATE(s.sale_date) BETWEEN start_date AND end_date
+    GROUP BY s.id
+    ORDER BY s.sale_date DESC;
+END$$
+
+DROP PROCEDURE IF EXISTS `GetTopProducts`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetTopProducts` (IN `limit_count` INT)   BEGIN
+    SELECT 
+        p.id,
+        p.code,
+        p.brand,
+        p.model,
+        c.name as category_name,
+        COALESCE(SUM(si.quantity), 0) as total_sold,
+        COALESCE(SUM(si.total_price), 0) as total_revenue
+    FROM products p
+    LEFT JOIN sale_items si ON p.id = si.product_id
+    LEFT JOIN sales s ON si.sale_id = s.id
+    WHERE p.is_active = TRUE
+    GROUP BY p.id
+    ORDER BY total_revenue DESC
+    LIMIT limit_count;
+END$$
+
+--
+-- Functions
+--
+DROP FUNCTION IF EXISTS `CalculateStockValue`$$
+CREATE DEFINER=`root`@`localhost` FUNCTION `CalculateStockValue` (`product_id` INT) RETURNS DECIMAL(10,2) DETERMINISTIC READS SQL DATA BEGIN
+    DECLARE stock_value DECIMAL(10,2);
+    SELECT stock * purchase_price INTO stock_value
+    FROM products
+    WHERE id = product_id;
+    RETURN stock_value;
+END$$
+
+DROP FUNCTION IF EXISTS `GetTotalStockValue`$$
+CREATE DEFINER=`root`@`localhost` FUNCTION `GetTotalStockValue` () RETURNS DECIMAL(15,2) DETERMINISTIC READS SQL DATA BEGIN
+    DECLARE total_value DECIMAL(15,2);
+    SELECT SUM(stock * purchase_price) INTO total_value
+    FROM products
+    WHERE is_active = TRUE;
+    RETURN total_value;
+END$$
+
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -37,6 +127,7 @@ CREATE TABLE IF NOT EXISTS `branches` (
   `address` text,
   `is_active` tinyint(1) DEFAULT '1',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -44,8 +135,41 @@ CREATE TABLE IF NOT EXISTS `branches` (
 -- Dumping data for table `branches`
 --
 
-INSERT INTO `branches` (`id`, `name`, `location`, `phone`, `email`, `address`, `is_active`, `created_at`) VALUES
-(1, 'Main Branch', '123 Main Street, City, Country', '+0123456789', 'main@ibs.com', 'Primary business location', 1, '2026-02-08 13:50:00');
+INSERT INTO `branches` (`id`, `name`, `location`, `phone`, `email`, `address`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Main Branch', '123 Main Street, City, Country', '+0123456789', 'main@ibs.com', 'Primary business location', 1, '2026-02-08 13:50:00', '2026-02-13 23:06:45');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `brands`
+--
+
+DROP TABLE IF EXISTS `brands`;
+CREATE TABLE IF NOT EXISTS `brands` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `description` text,
+  `logo_url` varchar(255) DEFAULT NULL,
+  `website` varchar(255) DEFAULT NULL,
+  `contact_email` varchar(100) DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`),
+  KEY `idx_brands_name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `brands`
+--
+
+INSERT INTO `brands` (`id`, `name`, `description`, `logo_url`, `website`, `contact_email`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Apple', 'Apple Inc. - Technology company designing consumer electronics', NULL, 'https://www.apple.com', 'support@apple.com', 1, '2026-01-24 00:14:15', '2026-02-13 23:06:45'),
+(2, 'Samsung', 'Samsung Electronics - Global technology company', NULL, 'https://www.samsung.com', 'support@samsung.com', 1, '2026-01-24 00:14:15', '2026-02-13 23:06:45'),
+(3, 'Xiaomi', 'Xiaomi Corporation - Chinese electronics company', NULL, 'https://www.mi.com', 'support@xiaomi.com', 1, '2026-01-24 00:14:15', '2026-02-13 23:06:45'),
+(4, 'OnePlus', 'OnePlus Technology - Smartphone manufacturer', NULL, 'https://www.oneplus.com', 'support@oneplus.com', 1, '2026-01-24 00:14:15', '2026-02-13 23:06:45'),
+(5, 'Huawei', 'Huawei Technologies - Chinese multinational technology company', NULL, 'https://www.huawei.com', 'support@huawei.com', 1, '2026-01-24 00:14:15', '2026-02-13 23:06:45');
 
 -- --------------------------------------------------------
 
@@ -60,6 +184,7 @@ CREATE TABLE IF NOT EXISTS `categories` (
   `description` text,
   `is_active` tinyint(1) DEFAULT '1',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -67,12 +192,12 @@ CREATE TABLE IF NOT EXISTS `categories` (
 -- Dumping data for table `categories`
 --
 
-INSERT INTO `categories` (`id`, `name`, `description`, `is_active`, `created_at`) VALUES
-(1, 'Phones', 'Mobile phones and smartphones', 1, '2026-01-24 00:14:15'),
-(2, 'AirPods', 'Apple wireless earbuds and headphones', 1, '2026-01-24 00:14:15'),
-(3, 'Watch', 'Smart watches and wearable devices', 1, '2026-01-24 00:14:15'),
-(4, 'Accessories', 'Phone accessories like cases, chargers, cables, etc.', 1, '2026-01-24 00:14:15'),
-(5, 'Tablets', 'Tablet devices', 1, '2026-01-24 00:14:15');
+INSERT INTO `categories` (`id`, `name`, `description`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Phones', 'Mobile phones and smartphones', 1, '2026-01-24 00:14:15', '2026-02-13 23:06:45'),
+(2, 'AirPods', 'Apple wireless earbuds and headphones', 1, '2026-01-24 00:14:15', '2026-02-13 23:06:45'),
+(3, 'Watch', 'Smart watches and wearable devices', 1, '2026-01-24 00:14:15', '2026-02-13 23:06:45'),
+(4, 'Accessories', 'Phone accessories like cases, chargers, cables, etc.', 1, '2026-01-24 00:14:15', '2026-02-13 23:06:45'),
+(5, 'Tablets', 'Tablet devices', 1, '2026-01-24 00:14:15', '2026-02-13 23:06:45');
 
 -- --------------------------------------------------------
 
@@ -89,18 +214,36 @@ CREATE TABLE IF NOT EXISTS `customers` (
   `address` text,
   `branch_id` int DEFAULT NULL,
   `total_purchases` decimal(10,2) DEFAULT '0.00',
+  `is_active` tinyint(1) DEFAULT '1',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_customers_branch` (`branch_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `customers`
 --
 
-INSERT INTO `customers` (`id`, `name`, `phone`, `email`, `address`, `branch_id`, `total_purchases`, `created_at`) VALUES
-(1, 'Ahmed Hassan', '+966-50-111-2222', 'ahmed@email.com', 'Riyadh, Saudi Arabia', 1, 0.00, '2026-01-24 00:14:16'),
-(2, 'Sarah Johnson', '+966-55-333-4444', 'sarah@email.com', 'Jeddah, Saudi Arabia', 1, 0.00, '2026-01-24 00:14:16'),
-(3, 'Mohammed Ali', '+966-58-555-6666', 'mohammed@email.com', 'Dammam, Saudi Arabia', 1, 0.00, '2026-01-24 00:14:16');
+INSERT INTO `customers` (`id`, `name`, `phone`, `email`, `address`, `branch_id`, `total_purchases`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Ahmed Hassan', '+966-50-111-2222', 'ahmed@email.com', 'Riyadh, Saudi Arabia', 1, 1000.00, 1, '2026-01-24 00:14:16', '2026-02-14 19:18:19'),
+(2, 'Sarah Johnson', '+966-55-333-4444', 'sarah@email.com', 'Jeddah, Saudi Arabia', 1, 0.00, 1, '2026-01-24 00:14:16', '2026-02-13 23:06:45'),
+(3, 'Mohammed Ali', '+966-58-555-6666', 'mohammed@email.com', 'Dammam, Saudi Arabia', 1, 200.00, 1, '2026-01-24 00:14:16', '2026-02-18 22:04:39');
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `financial_summary`
+-- (See below for the actual view)
+--
+DROP VIEW IF EXISTS `financial_summary`;
+CREATE TABLE IF NOT EXISTS `financial_summary` (
+`date` date
+,`total_income` decimal(32,2)
+,`total_expenses` decimal(32,2)
+,`net_profit` decimal(33,2)
+,`branch_name` varchar(100)
+);
 
 -- --------------------------------------------------------
 
@@ -113,19 +256,27 @@ CREATE TABLE IF NOT EXISTS `income` (
   `id` int NOT NULL AUTO_INCREMENT,
   `amount` decimal(10,2) NOT NULL,
   `description` text,
+  `price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `category_id` int DEFAULT NULL,
+  `branch_id` int DEFAULT NULL,
   `date` date NOT NULL,
+  `entry_date` date NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_income_date` (`entry_date`),
+  KEY `idx_income_branch` (`branch_id`),
+  KEY `fk_income_category` (`category_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `income`
 --
 
-INSERT INTO `income` (`id`, `amount`, `description`, `date`, `created_at`) VALUES
-(1, 5000.00, 'Initial investment', '2026-01-01', '2026-01-22 23:19:00'),
-(2, 3000.00, 'Additional capital', '2026-01-15', '2026-01-22 23:19:00'),
-(3, 2000.00, 'Loan received', '2026-01-20', '2026-01-22 23:19:00');
+INSERT INTO `income` (`id`, `amount`, `description`, `price`, `category_id`, `branch_id`, `date`, `entry_date`, `created_at`, `updated_at`) VALUES
+(1, 5000.00, 'Initial investment', 5000.00, NULL, NULL, '2026-01-01', '2026-01-01', '2026-01-22 23:19:00', '2026-02-13 23:06:45'),
+(2, 3000.00, 'Additional capital', 3000.00, NULL, NULL, '2026-01-15', '2026-01-15', '2026-01-22 23:19:00', '2026-02-13 23:06:45'),
+(3, 2000.00, 'Loan received', 2000.00, NULL, NULL, '2026-01-20', '2026-01-20', '2026-01-22 23:19:00', '2026-02-13 23:06:45');
 
 -- --------------------------------------------------------
 
@@ -145,7 +296,26 @@ CREATE TABLE IF NOT EXISTS `income_entries` (
   PRIMARY KEY (`id`),
   KEY `idx_income_date` (`entry_date`),
   KEY `idx_income_created_by` (`created_by`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `low_stock_alerts`
+-- (See below for the actual view)
+--
+DROP VIEW IF EXISTS `low_stock_alerts`;
+CREATE TABLE IF NOT EXISTS `low_stock_alerts` (
+`id` int
+,`code` varchar(20)
+,`brand` varchar(50)
+,`model` varchar(100)
+,`stock` int
+,`min_stock` int
+,`category_name` varchar(50)
+,`branch_name` varchar(100)
+,`is_low_stock` int
+);
 
 -- --------------------------------------------------------
 
@@ -158,19 +328,29 @@ CREATE TABLE IF NOT EXISTS `payments` (
   `id` int NOT NULL AUTO_INCREMENT,
   `amount` decimal(10,2) NOT NULL,
   `description` text,
+  `price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `payment_method` varchar(50) DEFAULT NULL,
+  `reference_number` varchar(100) DEFAULT NULL,
+  `category_id` int DEFAULT NULL,
+  `branch_id` int DEFAULT NULL,
   `date` date NOT NULL,
+  `entry_date` date NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_payment_date` (`entry_date`),
+  KEY `idx_payment_branch` (`branch_id`),
+  KEY `fk_payment_category` (`category_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `payments`
 --
 
-INSERT INTO `payments` (`id`, `amount`, `description`, `date`, `created_at`) VALUES
-(1, 1500.00, 'Shop rent', '2026-01-05', '2026-01-22 23:19:00'),
-(2, 800.00, 'Electricity bill', '2026-01-10', '2026-01-22 23:19:00'),
-(3, 1200.00, 'Staff salaries', '2026-01-15', '2026-01-22 23:19:00');
+INSERT INTO `payments` (`id`, `amount`, `description`, `price`, `payment_method`, `reference_number`, `category_id`, `branch_id`, `date`, `entry_date`, `created_at`, `updated_at`) VALUES
+(1, 1500.00, 'Shop rent', 1500.00, NULL, NULL, NULL, NULL, '2026-01-05', '2026-01-05', '2026-01-22 23:19:00', '2026-02-13 23:06:45'),
+(2, 800.00, 'Electricity bill', 800.00, NULL, NULL, NULL, NULL, '2026-01-10', '2026-01-10', '2026-01-22 23:19:00', '2026-02-13 23:06:45'),
+(3, 1200.00, 'Staff salaries', 1200.00, NULL, NULL, NULL, NULL, '2026-01-15', '2026-01-15', '2026-01-22 23:19:00', '2026-02-13 23:06:45');
 
 -- --------------------------------------------------------
 
@@ -190,7 +370,7 @@ CREATE TABLE IF NOT EXISTS `payment_entries` (
   PRIMARY KEY (`id`),
   KEY `idx_payment_date` (`entry_date`),
   KEY `idx_payment_created_by` (`created_by`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -210,19 +390,7 @@ CREATE TABLE IF NOT EXISTS `payment_splits` (
   PRIMARY KEY (`id`),
   KEY `idx_payment_splits_sale_id` (`sale_id`),
   KEY `idx_payment_splits_method` (`payment_method`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Dumping data for table `payment_splits`
---
-
-INSERT INTO `payment_splits` (`id`, `sale_id`, `payment_method`, `amount`, `reference_number`, `installment_details`, `created_at`) VALUES
-(1, 4, 'Cash', 800.00, NULL, NULL, '2026-02-09 00:12:24'),
-(2, 4, 'Visa', 799.00, '****-****-****-1234', NULL, '2026-02-09 00:12:24'),
-(3, 5, 'Instapay', 1000.00, 'INST-20260209-001', NULL, '2026-02-09 00:12:24'),
-(4, 5, 'Installment', 2999.00, '6 months - 0% interest', NULL, '2026-02-09 00:12:24'),
-(5, 6, 'Cash', 500.00, NULL, NULL, '2026-02-09 00:12:24'),
-(6, 6, 'Visa', 1899.00, '****-****-****-5678', NULL, '2026-02-09 00:12:24');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -254,23 +422,27 @@ CREATE TABLE IF NOT EXISTS `products` (
   `imei` varchar(20) DEFAULT NULL,
   `color` varchar(30) DEFAULT NULL,
   `supplier_id` int DEFAULT NULL,
+  `brand_id` int DEFAULT NULL,
   `has_imei` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`),
-  KEY `idx_products_barcode` (`barcode`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `idx_products_barcode` (`barcode`),
+  KEY `idx_products_category` (`category_id`),
+  KEY `idx_products_supplier` (`supplier_id`),
+  KEY `idx_products_branch` (`branch_id`),
+  KEY `idx_products_brand` (`brand_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `products`
 --
 
-INSERT INTO `products` (`id`, `code`, `barcode`, `brand`, `model`, `suggested_price`, `purchase_price`, `min_selling_price`, `stock`, `min_stock`, `category`, `description`, `image_url`, `is_active`, `created_at`, `updated_at`, `category_id`, `branch_id`, `serial_number`, `imei`, `color`, `supplier_id`, `has_imei`) VALUES
-(1, 'IBS001', NULL, 'Apple', 'iPhone 15 Pro', 3999.00, 2799.00, 3199.00, 25, NULL, NULL, 'Latest iPhone with A17 Pro chip', NULL, 1, '2026-01-24 00:14:16', '2026-02-08 15:51:44', 1, 1, 'SN001234567890', '354409123456789', 'Space Gray', 1, 1),
-(2, 'IBS002', NULL, 'Apple', 'iPhone 15', 3199.00, 2239.00, 2559.00, 30, NULL, NULL, 'iPhone 15 with Dynamic Island', NULL, 1, '2026-01-24 00:14:16', '2026-02-08 15:51:44', 1, 1, 'SN002345678901', '354409234567890', 'Blue', 2, 1),
-(3, 'IBS003', NULL, 'Samsung', 'Galaxy S24 Ultra', 4799.00, 3359.00, 3839.00, 18, NULL, NULL, 'Premium Galaxy with S Pen', NULL, 1, '2026-01-24 00:14:16', '2026-02-08 15:51:44', 1, 1, 'SN003456789012', '358940123456789', 'Black', 3, 1),
-(4, 'IBS004', NULL, 'Apple', 'iPad Air', 2399.00, 1679.00, 1919.00, 12, NULL, NULL, 'iPad Air with M1 chip', NULL, 1, '2026-01-24 00:14:16', '2026-02-08 15:51:44', 5, 1, 'SN004567890123', NULL, 'Space Gray', 2, 0),
-(5, 'IBS005', NULL, 'Samsung', 'Galaxy Watch 6', 1319.00, 923.00, 1055.00, 15, NULL, NULL, 'Latest Galaxy smartwatch', NULL, 1, '2026-01-24 00:14:16', '2026-02-08 15:51:44', 3, 1, 'SN005123456789', NULL, 'Black', 1, 0),
-(6, 'IBS006', NULL, 'iphone ', '17 pro', 99999999.99, 99999999.99, 99999999.99, 2, 2, NULL, '', '', 1, '2026-01-24 00:15:54', '2026-02-08 15:51:44', 1, 1, NULL, NULL, NULL, NULL, 0);
+INSERT INTO `products` (`id`, `code`, `barcode`, `brand`, `model`, `suggested_price`, `purchase_price`, `min_selling_price`, `stock`, `min_stock`, `category`, `description`, `image_url`, `is_active`, `created_at`, `updated_at`, `category_id`, `branch_id`, `serial_number`, `imei`, `color`, `supplier_id`, `brand_id`, `has_imei`) VALUES
+(1, 'IBS001', NULL, 'Apple', 'iPhone 15 Pro', 3999.00, 2799.00, 3199.00, 24, 5, NULL, 'Latest iPhone with A17 Pro chip', NULL, 1, '2026-01-24 00:14:16', '2026-02-13 23:06:45', 1, 1, 'SN001234567890', '354409123456789', 'Space Gray', 1, 1, 1),
+(2, 'IBS002', NULL, 'Apple', 'iPhone 15', 3199.00, 2239.00, 2559.00, 3, 5, NULL, 'iPhone 15 with Dynamic Island', NULL, 1, '2026-01-24 00:14:16', '2026-02-14 18:23:43', 1, 1, 'SN002345678901', '354409234567890', 'Blue', 2, 1, 1),
+(3, 'IBS003', NULL, 'Samsung', 'Galaxy S24 Ultra', 4799.00, 3359.00, 3839.00, 17, 5, NULL, 'Premium Galaxy with S Pen', NULL, 1, '2026-01-24 00:14:16', '2026-02-13 23:06:45', 1, 1, 'SN003456789012', '358940123456789', 'Black', 3, 2, 1),
+(4, 'IBS004', NULL, 'Apple', 'iPad Air', 2399.00, 1679.00, 1919.00, 1, 3, NULL, 'iPad Air with M1 chip', NULL, 1, '2026-01-24 00:14:16', '2026-02-14 18:19:36', 5, 1, 'SN004567890123', NULL, 'Space Gray', 2, 1, 0),
+(5, 'IBS005', NULL, 'Samsung', 'Galaxy Watch 6', 1319.00, 923.00, 1055.00, 15, 3, NULL, 'Latest Galaxy smartwatch', NULL, 1, '2026-01-24 00:14:16', '2026-02-08 15:51:44', 3, 1, 'SN005123456789', NULL, 'Black', 1, 2, 0);
 
 -- --------------------------------------------------------
 
@@ -282,29 +454,49 @@ DROP TABLE IF EXISTS `sales`;
 CREATE TABLE IF NOT EXISTS `sales` (
   `id` int NOT NULL AUTO_INCREMENT,
   `receipt_number` varchar(20) NOT NULL,
+  `sale_number` varchar(50) NOT NULL DEFAULT '',
   `customer_id` int DEFAULT NULL,
   `staff_id` int DEFAULT NULL,
+  `branch_id` int DEFAULT NULL,
   `total_amount` decimal(10,2) NOT NULL,
   `payment_method` varchar(20) DEFAULT NULL,
   `is_split_payment` tinyint(1) DEFAULT '0',
   `total_paid` decimal(10,2) GENERATED ALWAYS AS (`total_amount`) STORED,
   `sale_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `notes` text,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `receipt_number` (`receipt_number`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `receipt_number` (`receipt_number`),
+  KEY `idx_sales_customer` (`customer_id`),
+  KEY `idx_sales_staff` (`staff_id`),
+  KEY `idx_sales_branch` (`branch_id`),
+  KEY `idx_sales_date` (`sale_date`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `sales`
 --
 
-INSERT INTO `sales` (`id`, `receipt_number`, `customer_id`, `staff_id`, `total_amount`, `payment_method`, `is_split_payment`, `sale_date`, `created_at`) VALUES
-(1, 'IBS-20260124-001', 1, 1, 3999.00, 'Cash', 0, '2026-01-24 00:14:16', '2026-01-24 00:14:16'),
-(2, 'IBS-20260124-002', 2, 2, 2799.00, 'Visa', 0, '2026-01-24 00:14:16', '2026-01-24 00:14:16'),
-(3, 'IBS-20260124-003', 3, 1, 4799.00, 'Cash', 0, '2026-01-24 00:14:16', '2026-01-24 00:14:16'),
-(4, 'IBS-20260209-004', 1, 1, 1599.00, 'Instapay', 1, '2026-02-09 08:30:00', '2026-02-09 08:30:00'),
-(5, 'IBS-20260209-005', 2, 2, 3999.00, 'Installment', 1, '2026-02-09 09:15:00', '2026-02-09 09:15:00'),
-(6, 'IBS-20260209-006', 3, 1, 2399.00, 'Visa', 1, '2026-02-09 10:00:00', '2026-02-09 10:00:00');
+INSERT INTO `sales` (`id`, `receipt_number`, `sale_number`, `customer_id`, `staff_id`, `branch_id`, `total_amount`, `payment_method`, `is_split_payment`, `sale_date`, `notes`, `created_at`, `updated_at`) VALUES
+(1, 'IBS-20260124-001', '', 1, 1, NULL, 3999.00, 'Cash', 0, '2026-01-24 00:14:16', NULL, '2026-01-24 00:14:16', '2026-02-13 23:06:45'),
+(2, 'IBS-20260124-002', '', 2, 2, NULL, 2799.00, 'Visa', 0, '2026-01-24 00:14:16', NULL, '2026-01-24 00:14:16', '2026-02-13 23:06:45'),
+(3, 'IBS-20260124-003', '', 3, 1, NULL, 4799.00, 'Cash', 0, '2026-01-24 00:14:16', NULL, '2026-01-24 00:14:16', '2026-02-13 23:06:45');
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `sales_summary`
+-- (See below for the actual view)
+--
+DROP VIEW IF EXISTS `sales_summary`;
+CREATE TABLE IF NOT EXISTS `sales_summary` (
+`sale_date` date
+,`total_sales` bigint
+,`total_revenue` decimal(32,2)
+,`avg_sale_amount` decimal(14,6)
+,`branch_name` varchar(100)
+);
 
 -- --------------------------------------------------------
 
@@ -320,20 +512,53 @@ CREATE TABLE IF NOT EXISTS `sale_items` (
   `quantity` int NOT NULL DEFAULT '1',
   `unit_price` decimal(10,2) NOT NULL,
   `total_price` decimal(10,2) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_sale_items_sale` (`sale_id`),
+  KEY `idx_sale_items_product` (`product_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `sale_items`
 --
 
-INSERT INTO `sale_items` (`id`, `sale_id`, `product_id`, `quantity`, `unit_price`, `total_price`) VALUES
-(1, 1, 1, 1, 3999.00, 3999.00),
-(2, 2, 2, 1, 2799.00, 2799.00),
-(3, 3, 3, 1, 4799.00, 4799.00),
-(4, 4, 5, 1, 1599.00, 1599.00),
-(5, 5, 1, 1, 3999.00, 3999.00),
-(6, 6, 4, 1, 2399.00, 2399.00);
+INSERT INTO `sale_items` (`id`, `sale_id`, `product_id`, `quantity`, `unit_price`, `total_price`, `created_at`) VALUES
+(1, 1, 1, 1, 3999.00, 3999.00, '2026-01-24 00:14:16'),
+(2, 2, 2, 1, 2799.00, 2799.00, '2026-01-24 00:14:16'),
+(3, 3, 3, 1, 4799.00, 4799.00, '2026-01-24 00:14:16');
+
+--
+-- Triggers `sale_items`
+--
+DROP TRIGGER IF EXISTS `restore_stock_on_sale_delete`;
+DELIMITER $$
+CREATE TRIGGER `restore_stock_on_sale_delete` AFTER DELETE ON `sale_items` FOR EACH ROW BEGIN
+    UPDATE products 
+    SET stock = stock + OLD.quantity 
+    WHERE id = OLD.product_id;
+END
+$$
+DELIMITER ;
+DROP TRIGGER IF EXISTS `update_stock_on_sale`;
+DELIMITER $$
+CREATE TRIGGER `update_stock_on_sale` AFTER INSERT ON `sale_items` FOR EACH ROW BEGIN
+    UPDATE products 
+    SET stock = stock - NEW.quantity 
+    WHERE id = NEW.product_id;
+END
+$$
+DELIMITER ;
+DROP TRIGGER IF EXISTS `update_stock_on_sale_item_update`;
+DELIMITER $$
+CREATE TRIGGER `update_stock_on_sale_item_update` AFTER UPDATE ON `sale_items` FOR EACH ROW BEGIN
+    IF NEW.quantity != OLD.quantity THEN
+        UPDATE products 
+        SET stock = stock + (OLD.quantity - NEW.quantity) 
+        WHERE id = NEW.product_id;
+    END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -347,7 +572,10 @@ CREATE TABLE IF NOT EXISTS `stock_items` (
   `product_id` int NOT NULL,
   `serial_number` varchar(50) NOT NULL,
   `imei` varchar(20) DEFAULT NULL,
+  `item_identifier` varchar(100) NOT NULL DEFAULT '',
+  `item_type` enum('imei','serial','other') DEFAULT 'other',
   `status` enum('available','sold','reserved','damaged') DEFAULT 'available',
+  `notes` text,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `sale_id` int DEFAULT NULL,
@@ -355,86 +583,22 @@ CREATE TABLE IF NOT EXISTS `stock_items` (
   UNIQUE KEY `unique_serial` (`serial_number`),
   KEY `idx_product_id` (`product_id`),
   KEY `idx_status` (`status`),
-  KEY `fk_stock_items_sale` (`sale_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=81 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `fk_stock_items_sale` (`sale_id`),
+  KEY `idx_stock_items_identifier` (`item_identifier`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `stock_items`
 --
 
-INSERT INTO `stock_items` (`id`, `product_id`, `serial_number`, `imei`, `status`, `created_at`, `updated_at`, `sale_id`) VALUES
-(1, 1, 'SN001234567890', '354409123456789', 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(2, 1, 'SN001234567891', '354409123456790', 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(3, 1, 'SN001234567892', '354409123456791', 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(4, 2, 'SN002345678901', '354409234567890', 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(5, 2, 'SN002345678902', '354409234567891', 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(6, 2, 'SN002345678903', '354409234567892', 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(7, 3, 'SN003456789012', '358940123456789', 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(8, 3, 'SN003456789013', '358940123456790', 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(9, 3, 'SN003456789014', '358940123456791', 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(10, 4, 'SN004567890123', NULL, 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(11, 4, 'SN004567890124', NULL, 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(12, 4, 'SN004567890125', NULL, 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(13, 5, 'SN005123456789', NULL, 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(14, 5, 'SN005123456790', NULL, 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(15, 5, 'SN005123456791', NULL, 'available', '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
-(16, 6, 'SN1769794835406n9ia2s0670', NULL, 'available', '2026-01-30 17:40:35', '2026-01-30 17:40:35', NULL),
-(17, 6, 'SN1769794845040w0z69qykk0', NULL, 'available', '2026-01-30 17:40:45', '2026-01-30 17:40:45', NULL),
-(18, 5, 'SN1769942218433u3zwwuz2p0', NULL, 'available', '2026-02-01 10:36:58', '2026-02-01 10:36:58', NULL),
-(19, 5, 'SN17699422184334oq6vp9x91', NULL, 'available', '2026-02-01 10:36:58', '2026-02-01 10:36:58', NULL),
-(20, 5, 'SN1769942218433v0ehm85122', NULL, 'available', '2026-02-01 10:36:58', '2026-02-01 10:36:58', NULL),
-(21, 5, 'SN1769942218433clkwncydp3', NULL, 'available', '2026-02-01 10:36:58', '2026-02-01 10:36:58', NULL),
-(22, 5, 'SN1769942218433zimypzcg44', NULL, 'available', '2026-02-01 10:36:58', '2026-02-01 10:36:58', NULL),
-(25, 7, 'SN176994226326250w1ky42w2', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(26, 7, 'SN1769942263262vy0wgzxfo3', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(27, 7, 'SN17699422632620hbw6moa04', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(28, 7, 'SN1769942263262swe6u808t5', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(29, 7, 'SN1769942263262hzno8kb3x6', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(30, 7, 'SN17699422632620u8vqwfc77', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(31, 7, 'SN17699422632625ut00ogk88', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(32, 7, 'SN1769942263262hw20ihini9', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(33, 7, 'SN17699422632623e3x4zzv010', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(34, 7, 'SN17699422632621nlh82h4z11', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(35, 7, 'SN1769942263262h44dpkm9c12', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(36, 7, 'SN1769942263262kj8ojq7hh13', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(37, 7, 'SN1769942263262xzfn5ufxt14', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(38, 7, 'SN1769942263262j5opksqgd15', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(39, 7, 'SN17699422632624mv2t8w8f16', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(40, 7, 'SN17699422632621a0kq3nu317', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(41, 7, 'SN1769942263262y3vx0klij18', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(42, 7, 'SN1769942263262uuks585jd19', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(43, 7, 'SN1769942263262r9czq6zqv20', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(44, 7, 'SN1769942263262tzzyh7hyi21', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(45, 7, 'SN17699422632627y2pe7ar322', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(46, 7, 'SN1769942263262o1x8zlqzr23', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(47, 7, 'SN1769942263262l7uqm7ql824', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(48, 7, 'SN17699422632628wiiks0iw25', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(49, 7, 'SN1769942263262iu8x1hu7p26', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(50, 7, 'SN1769942263262ys8h9nrp327', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(51, 7, 'SN176994226326284u7vtrwz28', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(52, 7, 'SN1769942263262jlcp2dgq229', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(53, 7, 'SN1769942263262k4ilzur4130', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(54, 7, 'SN1769942263262hh5cya1au31', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(55, 7, 'SN1769942263262ksv4ph52032', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(56, 7, 'SN1769942263262jn1yl4zev33', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(57, 7, 'SN1769942263262kicq5h2w134', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(58, 7, 'SN1769942263262kzlv078ff35', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(59, 7, 'SN1769942263262uch5k2cno36', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(60, 7, 'SN17699422632621akpmi77b37', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(61, 7, 'SN1769942263262z5y8xi5ds38', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(62, 7, 'SN1769942263262pw9gkh2ci39', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(63, 7, 'SN1769942263262toobddxnt40', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(64, 7, 'SN17699422632625ahc8olae41', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(65, 7, 'SN1769942263262hxtwpfmw542', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(67, 7, 'SN1769942263262jyu53zkda44', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(71, 7, 'SN17699422632623hyhmrjes48', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(72, 7, 'SN1769942263262vret7rdsm49', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(73, 7, 'SN1769942263262sxhxl0gji50', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(74, 7, 'SN17699422632623mc21t5zd51', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(75, 7, 'SN1769942263262a9nsxqokf52', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(77, 7, 'SN1769942263262kjln97u9r54', NULL, 'available', '2026-02-01 10:37:43', '2026-02-01 10:37:43', NULL),
-(78, 8, 'SN1770303007703tnyyxx9bm0', NULL, 'available', '2026-02-05 14:50:07', '2026-02-05 14:50:07', NULL),
-(80, 8, 'SN17703039251671zzt3t3pq0', NULL, 'available', '2026-02-05 15:05:25', '2026-02-05 15:05:25', NULL);
+INSERT INTO `stock_items` (`id`, `product_id`, `serial_number`, `imei`, `item_identifier`, `item_type`, `status`, `notes`, `created_at`, `updated_at`, `sale_id`) VALUES
+(1, 1, 'SN001234567890', '354409123456789', '354409123456789', 'imei', 'available', NULL, '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
+(2, 1, 'SN001234567891', '354409123456790', '354409123456790', 'imei', 'available', NULL, '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
+(3, 2, 'SN002345678901', '354409234567890', '354409234567890', 'imei', 'available', NULL, '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
+(4, 3, 'SN003456789012', '358940123456789', '358940123456789', 'imei', 'available', NULL, '2026-01-24 00:14:16', '2026-01-24 00:14:16', NULL),
+(5, 4, 'SN1771093176262vo83wydgh0', NULL, '', 'other', 'available', NULL, '2026-02-14 18:19:36', '2026-02-14 18:19:36', NULL),
+(6, 2, 'SN1771093423056316o8qecp', '5555', '', 'other', 'available', NULL, '2026-02-14 18:23:43', '2026-02-14 18:23:43', NULL),
+(7, 2, 'SN1771093423056dld1t6kn4', '8888888888888', '', 'other', 'available', NULL, '2026-02-14 18:23:43', '2026-02-14 18:23:43', NULL);
 
 -- --------------------------------------------------------
 
@@ -452,6 +616,7 @@ CREATE TABLE IF NOT EXISTS `suppliers` (
   `address` text,
   `is_active` tinyint(1) DEFAULT '1',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -459,10 +624,10 @@ CREATE TABLE IF NOT EXISTS `suppliers` (
 -- Dumping data for table `suppliers`
 --
 
-INSERT INTO `suppliers` (`id`, `name`, `contact_person`, `phone`, `email`, `address`, `is_active`, `created_at`) VALUES
-(1, 'Global Tech Supplies', 'Ahmed Mohamed', '+966-50-123-4567', 'ahmed@globaltech.sa', 'Riyadh, Saudi Arabia', 1, '2026-01-24 00:14:16'),
-(2, 'Mobile Parts Warehouse', 'Salem Abdullah', '+966-55-987-6543', 'salem@mobileparts.sa', 'Jeddah, Saudi Arabia', 1, '2026-01-24 00:14:16'),
-(3, 'Electronics Import Co', 'Khalid Omar', '+966-58-456-7890', 'khalid@electronics.sa', 'Dammam, Saudi Arabia', 1, '2026-01-24 00:14:16');
+INSERT INTO `suppliers` (`id`, `name`, `contact_person`, `phone`, `email`, `address`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Global Tech Supplies', 'Ahmed Mohamed', '+966-50-123-4567', 'ahmed@globaltech.sa', 'Riyadh, Saudi Arabia', 1, '2026-01-24 00:14:16', '2026-02-13 23:06:45'),
+(2, 'Mobile Parts Warehouse', 'Salem Abdullah', '+966-55-987-6543', 'salem@mobileparts.sa', 'Jeddah, Saudi Arabia', 1, '2026-01-24 00:14:16', '2026-02-13 23:06:45'),
+(3, 'Electronics Import Co', 'Khalid Omar', '+966-58-456-7890', 'khalid@electronics.sa', 'Dammam, Saudi Arabia', 1, '2026-01-24 00:14:16', '2026-02-13 23:06:45');
 
 -- --------------------------------------------------------
 
@@ -476,27 +641,82 @@ CREATE TABLE IF NOT EXISTS `users` (
   `username` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL,
   `name` varchar(100) NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
   `role` enum('owner','admin','staff') NOT NULL DEFAULT 'staff',
   `branch_id` int DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT '1',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `username` (`username`),
+  KEY `idx_users_role` (`role`),
+  KEY `idx_users_branch` (`branch_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `name`, `role`, `branch_id`, `is_active`, `created_at`) VALUES
-(1, 'owner', 'owner123', 'System Owner', 'owner', 1, 1, '2026-01-23 22:14:16'),
-(2, 'admin', 'admin123', 'System Administrator', 'admin', 1, 1, '2026-01-23 22:14:16'),
-(3, 'staff1', 'staff123', 'Ahmed Hassan', 'staff', 1, 1, '2026-01-23 22:14:16'),
-(4, 'staff2', 'staff123', 'Sarah Johnson', 'staff', 1, 1, '2026-01-23 22:14:16');
+INSERT INTO `users` (`id`, `username`, `password`, `name`, `email`, `phone`, `role`, `branch_id`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'owner', 'owner123', 'System Owner', 'owner@ibs.com', '+1234567890', 'owner', 1, 1, '2026-01-23 22:14:16', '2026-02-13 23:06:45'),
+(2, 'admin', 'admin123', 'System Administrator', 'admin@ibs.com', '+1234567891', 'admin', 1, 1, '2026-01-23 22:14:16', '2026-02-13 23:06:45'),
+(3, 'staff1', 'staff123', 'Ahmed Hassan', 'ahmed@email.com', '+966-50-111-2222', 'staff', 1, 1, '2026-01-23 22:14:16', '2026-02-13 23:06:45'),
+(4, 'staff2', 'staff123', 'Sarah Johnson', 'sarah@email.com', '+966-55-333-4444', 'staff', 1, 1, '2026-01-23 22:14:16', '2026-02-13 23:06:45');
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `financial_summary`
+--
+DROP TABLE IF EXISTS `financial_summary`;
+
+DROP VIEW IF EXISTS `financial_summary`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `financial_summary`  AS SELECT `combined_data`.`date` AS `date`, sum(`combined_data`.`total_income`) AS `total_income`, sum(`combined_data`.`total_expenses`) AS `total_expenses`, (sum(`combined_data`.`total_income`) - sum(`combined_data`.`total_expenses`)) AS `net_profit`, `combined_data`.`branch_name` AS `branch_name` FROM (select cast(`i`.`entry_date` as date) AS `date`,coalesce(`i`.`price`,`i`.`amount`) AS `total_income`,0 AS `total_expenses`,coalesce(`b`.`name`,'Unknown') AS `branch_name` from (`income` `i` left join `branches` `b` on((`i`.`branch_id` = `b`.`id`))) union all select cast(`p`.`entry_date` as date) AS `date`,0 AS `total_income`,coalesce(`p`.`price`,`p`.`amount`) AS `total_expenses`,coalesce(`b`.`name`,'Unknown') AS `branch_name` from (`payments` `p` left join `branches` `b` on((`p`.`branch_id` = `b`.`id`)))) AS `combined_data` GROUP BY `combined_data`.`date`, `combined_data`.`branch_name` ORDER BY `combined_data`.`date` DESC ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `low_stock_alerts`
+--
+DROP TABLE IF EXISTS `low_stock_alerts`;
+
+DROP VIEW IF EXISTS `low_stock_alerts`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `low_stock_alerts`  AS SELECT `p`.`id` AS `id`, `p`.`code` AS `code`, `p`.`brand` AS `brand`, `p`.`model` AS `model`, `p`.`stock` AS `stock`, `p`.`min_stock` AS `min_stock`, `c`.`name` AS `category_name`, `b`.`name` AS `branch_name`, (`p`.`stock` <= `p`.`min_stock`) AS `is_low_stock` FROM ((`products` `p` left join `categories` `c` on((`p`.`category_id` = `c`.`id`))) left join `branches` `b` on((`p`.`branch_id` = `b`.`id`))) WHERE (`p`.`is_active` = true) ORDER BY (`p`.`stock` / `p`.`min_stock`) ASC ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `sales_summary`
+--
+DROP TABLE IF EXISTS `sales_summary`;
+
+DROP VIEW IF EXISTS `sales_summary`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `sales_summary`  AS SELECT cast(`s`.`sale_date` as date) AS `sale_date`, count(`s`.`id`) AS `total_sales`, coalesce(sum(`s`.`total_amount`),0) AS `total_revenue`, avg(`s`.`total_amount`) AS `avg_sale_amount`, `b`.`name` AS `branch_name` FROM (`sales` `s` left join `branches` `b` on((`s`.`branch_id` = `b`.`id`))) GROUP BY cast(`s`.`sale_date` as date), `b`.`name` ORDER BY `sale_date` DESC ;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `customers`
+--
+ALTER TABLE `customers`
+  ADD CONSTRAINT `fk_customers_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `income`
+--
+ALTER TABLE `income`
+  ADD CONSTRAINT `fk_income_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_income_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `payments`
+--
+ALTER TABLE `payments`
+  ADD CONSTRAINT `fk_payment_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_payment_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `payment_splits`
@@ -505,10 +725,61 @@ ALTER TABLE `payment_splits`
   ADD CONSTRAINT `fk_payment_splits_sale` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `products`
+--
+ALTER TABLE `products`
+  ADD CONSTRAINT `fk_products_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_products_brand` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_products_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_products_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `sales`
+--
+ALTER TABLE `sales`
+  ADD CONSTRAINT `fk_sales_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE RESTRICT,
+  ADD CONSTRAINT `fk_sales_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_sales_staff` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT;
+
+--
+-- Constraints for table `sale_items`
+--
+ALTER TABLE `sale_items`
+  ADD CONSTRAINT `fk_sale_items_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE RESTRICT,
+  ADD CONSTRAINT `fk_sale_items_sale` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `stock_items`
 --
 ALTER TABLE `stock_items`
+  ADD CONSTRAINT `fk_stock_items_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_stock_items_sale` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `users`
+--
+ALTER TABLE `users`
+  ADD CONSTRAINT `fk_users_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE SET NULL;
+
+DELIMITER $$
+--
+-- Events
+--
+DROP EVENT IF EXISTS `audit_log_sales`$$
+CREATE DEFINER=`root`@`localhost` EVENT `audit_log_sales` ON SCHEDULE EVERY 1 HOUR STARTS '2026-02-14 00:48:37' ON COMPLETION NOT PRESERVE ENABLE DO INSERT INTO payment (description, amount, payment_method, reference_number, category_id, branch_id, entry_date, notes)
+    SELECT 
+        CONCAT('Sales Audit - ', COUNT(*), ' sales'),
+        COALESCE(SUM(total_amount), 0),
+        'Audit',
+        CONCAT('AUDIT-', DATE_FORMAT(NOW(), '%Y%m%d%H%i%s')),
+        4,
+        1,
+        DATE(NOW()),
+        'Automated sales audit log'
+    FROM sales
+    WHERE DATE(sale_date) = DATE(NOW())$$
+
+DELIMITER ;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
